@@ -32,17 +32,20 @@
 
 /*Global Variables*/
 char next_line[3] = {'\n','\r','\0'};
-size_t task_count = 0;
 char cmd[HISTORY_COUNT][CMDBUF_SIZE];
 int cur_his=0;
 int fdout;
 int fdin;
+unsigned int tick_count = 0;
+int timeup = 0;
 
 void check_keyword();
 void find_events();
 int fill_arg(char *const dest, const char *argv);
 void itoa(int n, char *dst, int base);
 void write_blank(int blank_num);
+size_t current_task = 0;
+size_t task_count = 0;
 
 /* Command handlers. */
 void export_envvar(int argc, char *argv[]);
@@ -88,9 +91,7 @@ typedef struct {
 evar_entry env_var[MAX_ENVCOUNT];
 int env_count = 0;
 
-
 struct task_control_block tasks[TASK_LIMIT];
-
 
 void serialout(USART_TypeDef* uart, unsigned int intr)
 {
@@ -104,13 +105,16 @@ void serialout(USART_TypeDef* uart, unsigned int intr)
 		if (doread)
 			read(fd, &c, 1);
 		doread = 0;
-		if (USART_GetFlagStatus(uart, USART_FLAG_TXE) == SET) {
-			USART_SendData(uart, c);
-			USART_ITConfig(USART2, USART_IT_TXE, ENABLE);
+//		if (USART_GetFlagStatus(uart, USART_FLAG_TXE) == SET) {
+		if (USART_GetFlagStatus((USART_TypeDef *)USART2, USART_FLAG_TXE) == SET) {
+//			USART_SendData(uart, c);
+			USART_SendData((USART_TypeDef *)USART2, c);
 			doread = 1;
+//			USART_ITConfig(USART2, USART_IT_TXE, ENABLE);
 		}
-		interrupt_wait(intr);
-		USART_ITConfig(USART2, USART_IT_TXE, DISABLE);
+//		interrupt_wait(intr);
+//		interrupt_wait(USART2_IRQn);
+//		USART_ITConfig(USART2, USART_IT_TXE, DISABLE);
 	}
 }
 
@@ -124,9 +128,14 @@ void serialin(USART_TypeDef* uart, unsigned int intr)
     USART_ITConfig(USART2, USART_IT_RXNE, ENABLE);
 
 	while (1) {
-		interrupt_wait(intr);
-		if (USART_GetFlagStatus(uart, USART_FLAG_RXNE) == SET) {
+//		interrupt_wait(intr);
+		interrupt_wait(USART2_IRQn);
+		
+/*		if (USART_GetFlagStatus(uart, USART_FLAG_RXNE) == SET) {
 			c = USART_ReceiveData(uart);
+*/	
+		if (USART_GetFlagStatus((USART_TypeDef *)USART2, USART_FLAG_RXNE) == SET) {
+			c = USART_ReceiveData((USART_TypeDef *)USART2);
 			write(fd, &c, 1);
 		}
 	}
@@ -134,11 +143,32 @@ void serialin(USART_TypeDef* uart, unsigned int intr)
 
 void greeting()
 {
-	int fdout = open("/dev/tty0/out", 0);
-	char *string = "Hello, World!\n";
-	while (*string) {
-		write(fdout, string, 1);
-		string++;
+	while(1){
+	char *string = "Hello, World!\n\r";
+		while (*string) {
+			char c = *string;
+			if (USART_GetFlagStatus((USART_TypeDef *)USART2, USART_FLAG_TXE) == SET) {
+//				USART_SendData(uart, c);
+				USART_SendData((USART_TypeDef *)USART2, c);
+				string++;
+			}
+		}
+		sleep(30);
+	}
+}
+void greeting2()
+{
+	while(1){
+	char *string = "FUCKKKKKKKKKKKKKKK!\n\r";
+		while (*string) {
+			char c = *string;
+			if (USART_GetFlagStatus((USART_TypeDef *)USART2, USART_FLAG_TXE) == SET) {
+//				USART_SendData(uart, c);
+				USART_SendData((USART_TypeDef *)USART2, c);
+				string++;
+			}
+		}
+		sleep(110);
 	}
 }
 
@@ -164,9 +194,9 @@ void rs232_xmit_msg_task()
 	char str[100];
 	int curr_char;
 
+	fdin = mq_open("/tmp/mqueue/out", 0);
 	fdout = open("/dev/tty0/out", 0);
-	fdin = mq_open("/tmp/mqueue/out", O_CREAT);
-	setpriority(0, PRIORITY_DEFAULT - 2);
+//	setpriority(0, PRIORITY_DEFAULT - 2);
 
 	while (1) {
 		/* Read from the queue.  Keep trying until a message is
@@ -258,7 +288,7 @@ void serial_test_task()
 	int hint_length = sizeof(hint);
 	char *p = NULL;
 
-	fdout = mq_open("/tmp/mqueue/out", 0);
+	fdout = mq_open("/tmp/mqueue/out", O_CREAT);
 	fdin = open("/dev/tty0/in", 0);
 
 	for (;; cur_his = (cur_his + 1) % HISTORY_COUNT) {
@@ -494,7 +524,7 @@ void itoa(int n, char *dst, int base)
 {
 	char buf[33] = {0};
 	char *p = &buf[32];
-
+	
 	if (n == 0)
 		*--p = '0';
 	else {
@@ -705,16 +735,29 @@ void show_xxd(int argc, char *argv[])
     }
 }
 
+void idle(){
+	char *string = "idle\n\r";
+		while (*string) {
+			char c = *string;
+			if (USART_GetFlagStatus((USART_TypeDef *)USART2, USART_FLAG_TXE) == SET) {
+//				USART_SendData(uart, c);
+				USART_SendData((USART_TypeDef *)USART2, c);
+				string++;
+			}
+		}
+
+	while(1);	
+}
 
 void first()
 {
-	if (!fork()) setpriority(0, 0), pathserver();
-	if (!fork()) setpriority(0, 0), romdev_driver();
-	if (!fork()) setpriority(0, 0), romfs_server();
-	if (!fork()) setpriority(0, 0), serialout(USART2, USART2_IRQn);
-	if (!fork()) setpriority(0, 0), serialin(USART2, USART2_IRQn);
+	if (!fork()) pathserver();
+	if (!fork()) romdev_driver();
+	if (!fork()) romfs_server();
+	if (!fork()) serialout(USART2, USART2_IRQn);
+	if (!fork()) serialin(USART2, USART2_IRQn);
+	if (!fork()) serial_test_task();
 	if (!fork()) rs232_xmit_msg_task();
-	if (!fork()) setpriority(0, PRIORITY_DEFAULT - 10), serial_test_task();
 
 	setpriority(0, PRIORITY_LIMIT);
 
@@ -722,10 +765,6 @@ void first()
 
 	while(1);
 }
-
-#define INTR_EVENT(intr) (FILE_LIMIT + (intr) + 15) /* see INTR_LIMIT */
-#define INTR_EVENT_REVERSE(event) ((event) - FILE_LIMIT - 15)
-#define TIME_EVENT (FILE_LIMIT + INTR_LIMIT)
 
 int intr_release(struct event_monitor *monitor, int event,
                  struct task_control_block *task, void *data)
@@ -740,6 +779,10 @@ int time_release(struct event_monitor *monitor, int event,
     return task->stack->r0 == *tick_count;
 }
 
+/*	main
+ *
+ */
+
 /* System resources */
 unsigned int stacks[TASK_LIMIT][STACK_SIZE];
 char memory_space[MEM_LIMIT];
@@ -747,25 +790,16 @@ struct file *files[FILE_LIMIT];
 struct file_request requests[TASK_LIMIT];
 struct list ready_list[PRIORITY_LIMIT + 1];  /* [0 ... 39] */
 struct event events[EVENT_LIMIT];
-
+struct task_control_block *current_tcb;
+struct memory_pool memory_pool;
+struct event_monitor event_monitor;
+struct list *list;
 
 int main()
 {
-	//struct task_control_block tasks[TASK_LIMIT];
-	struct memory_pool memory_pool;
-	struct event_monitor event_monitor;
-	//size_t task_count = 0;
-	size_t current_task = 0;
 	int i;
-	struct list *list;
-	struct task_control_block *task;
-	int timeup;
-	unsigned int tick_count = 0;
-
-	SysTick_Config(configCPU_CLOCK_HZ / configTICK_RATE_HZ);
-
+	
 	init_rs232();
-	__enable_irq();
 
     /* Initialize memory pool */
     memory_pool_init(&memory_pool, MEM_LIMIT, memory_space);
@@ -790,203 +824,241 @@ int main()
 	    event_monitor_register(&event_monitor, INTR_EVENT(i), intr_release, 0);
 
 	event_monitor_register(&event_monitor, TIME_EVENT, time_release, &tick_count);
+    /* Initialize all task threads */
+	task_create(0, pathserver);
+//	task_create(0, romdev_driver);
+//	task_create(0, romfs_server);
+//	task_create(0, greeting);
+//	task_create(0, greeting2);
+	task_create(0, serialout);
+	task_create(0, serialin);
 
-    /* Initialize first thread */
-	tasks[task_count].stack = (void*)init_task(stacks[task_count], &first);
-	tasks[task_count].pid = 0;
-	tasks[task_count].priority = PRIORITY_DEFAULT;
-	list_init(&tasks[task_count].list);
-	list_push(&ready_list[tasks[task_count].priority], &tasks[task_count].list);
-	task_count++;
+//	task_create(0, serialout);
+	task_create(18, rs232_xmit_msg_task);
+	task_create(10, serial_test_task);
 
-	while (1) {
-		tasks[current_task].stack = activate(tasks[current_task].stack);
-		tasks[current_task].status = TASK_READY;
-		timeup = 0;
+//	task_create(24, idle);
+#if 0
+	task_create(0, pathserver);
+	task_create(0, serialin);
+	task_create(0, queue_str_task1);
+	task_create(0, queue_str_task2);
+	task_create(0, serialout);
+	task_create(0, rs232_xmit_msg_task);
+#endif
+	current_tcb = &tasks[current_task];
+//	mount("/dev/rom0", "/", ROMFS_TYPE, 0);
 
-		switch (tasks[current_task].stack->r7) {
-		case 0x1: /* fork */
-			if (task_count == TASK_LIMIT) {
-				/* Cannot create a new task, return error */
-				tasks[current_task].stack->r0 = -1;
-			}
-			else {
-				/* Compute how much of the stack is used */
-				size_t used = stacks[current_task] + STACK_SIZE
-					      - (unsigned int*)tasks[current_task].stack;
-				/* New stack is END - used */
-				tasks[task_count].stack = (void*)(stacks[task_count] + STACK_SIZE - used);
-				/* Copy only the used part of the stack */
-				memcpy(tasks[task_count].stack, tasks[current_task].stack,
-				       used * sizeof(unsigned int));
-				/* Set PID */
-				tasks[task_count].pid = task_count;
-				/* Set priority, inherited from forked task */
-				tasks[task_count].priority = tasks[current_task].priority;
-				/* Set return values in each process */
-				tasks[current_task].stack->r0 = task_count;
-				tasks[task_count].stack->r0 = 0;
-				list_init(&tasks[task_count].list);
-				list_push(&ready_list[tasks[task_count].priority], &tasks[task_count].list);
-				/* There is now one more task */
-				task_count++;
-			}
-			break;
-		case 0x2: /* getpid */
-			tasks[current_task].stack->r0 = current_task;
-			break;
-		case 0x3: /* write */
-		    {
-		        /* Check fd is valid */
-		        int fd = tasks[current_task].stack->r0;
-		        if (fd < FILE_LIMIT && files[fd]) {
-		            /* Prepare file request, store reference in r0 */
-		            requests[current_task].task = &tasks[current_task];
-		            requests[current_task].buf =
-		                (void*)tasks[current_task].stack->r1;
-		            requests[current_task].size = tasks[current_task].stack->r2;
-		            tasks[current_task].stack->r0 =
-		                (int)&requests[current_task];
+	SysTick_Config(configCPU_CLOCK_HZ / configTICK_RATE_HZ);
 
-                    /* Write */
-			        file_write(files[fd], &requests[current_task],
-			                   &event_monitor);
-			    }
-			    else {
-			        tasks[current_task].stack->r0 = -1;
-			    }
-			} break;
-		case 0x4: /* read */
-            {
-		        /* Check fd is valid */
-		        int fd = tasks[current_task].stack->r0;
-		        if (fd < FILE_LIMIT && files[fd]) {
-		            /* Prepare file request, store reference in r0 */
-		            requests[current_task].task = &tasks[current_task];
-		            requests[current_task].buf =
-		                (void*)tasks[current_task].stack->r1;
-		            requests[current_task].size = tasks[current_task].stack->r2;
-		            tasks[current_task].stack->r0 =
-		                (int)&requests[current_task];
-
-                    /* Read */
-			        file_read(files[fd], &requests[current_task],
-			                  &event_monitor);
-			    }
-			    else {
-			        tasks[current_task].stack->r0 = -1;
-			    }
-			} break;
-		case 0x5: /* interrupt_wait */
-			/* Enable interrupt */
-			NVIC_EnableIRQ(tasks[current_task].stack->r0);
-			/* Block task waiting for interrupt to happen */
-			event_monitor_block(&event_monitor,
-			                    INTR_EVENT(tasks[current_task].stack->r0),
-			                    &tasks[current_task]);
-			tasks[current_task].status = TASK_WAIT_INTR;
-			break;
-		case 0x6: /* getpriority */
-			{
-				int who = tasks[current_task].stack->r0;
-				if (who > 0 && who < (int)task_count)
-					tasks[current_task].stack->r0 = tasks[who].priority;
-				else if (who == 0)
-					tasks[current_task].stack->r0 = tasks[current_task].priority;
-				else
-					tasks[current_task].stack->r0 = -1;
-			} break;
-		case 0x7: /* setpriority */
-			{
-				int who = tasks[current_task].stack->r0;
-				int value = tasks[current_task].stack->r1;
-				value = (value < 0) ? 0 : ((value > PRIORITY_LIMIT) ? PRIORITY_LIMIT : value);
-				if (who > 0 && who < (int)task_count) {
-					tasks[who].priority = value;
-					if (tasks[who].status == TASK_READY)
-					    list_push(&ready_list[value], &tasks[who].list);
-				}
-				else if (who == 0) {
-					tasks[current_task].priority = value;
-				    list_unshift(&ready_list[value], &tasks[current_task].list);
-				}
-				else {
-					tasks[current_task].stack->r0 = -1;
-					break;
-				}
-				tasks[current_task].stack->r0 = 0;
-			} break;
-		case 0x8: /* mknod */
-			tasks[current_task].stack->r0 =
-				file_mknod(tasks[current_task].stack->r0,
-				           tasks[current_task].pid,
-				           files,
-					       tasks[current_task].stack->r2,
-					       &memory_pool,
-					       &event_monitor);
-			break;
-		case 0x9: /* sleep */
-			if (tasks[current_task].stack->r0 != 0) {
-				tasks[current_task].stack->r0 += tick_count;
-				tasks[current_task].status = TASK_WAIT_TIME;
-			    event_monitor_block(&event_monitor, TIME_EVENT,
-			                        &tasks[current_task]);
-			}
-			break;
-		case 0xa: /* lseek */
-            {
-		        /* Check fd is valid */
-		        int fd = tasks[current_task].stack->r0;
-		        if (fd < FILE_LIMIT && files[fd]) {
-		            /* Prepare file request, store reference in r0 */
-		            requests[current_task].task = &tasks[current_task];
-		            requests[current_task].buf = NULL;
-		            requests[current_task].size = tasks[current_task].stack->r1;
-		            requests[current_task].whence = tasks[current_task].stack->r2;
-		            tasks[current_task].stack->r0 =
-		                (int)&requests[current_task];
-
-                    /* Read */
-			        file_lseek(files[fd], &requests[current_task],
-			                   &event_monitor);
-			    }
-			    else {
-			        tasks[current_task].stack->r0 = -1;
-			    }
-			} break;
-		default: /* Catch all interrupts */
-			if ((int)tasks[current_task].stack->r7 < 0) {
-				unsigned int intr = -tasks[current_task].stack->r7 - 16;
-
-				if (intr == SysTick_IRQn) {
-					/* Never disable timer. We need it for pre-emption */
-					timeup = 1;
-					tick_count++;
-					event_monitor_release(&event_monitor, TIME_EVENT);
-				}
-				else {
-					/* Disable interrupt, interrupt_wait re-enables */
-					NVIC_DisableIRQ(intr);
-				}
-				event_monitor_release(&event_monitor, INTR_EVENT(intr));
-			}
-		}
-
-        /* Rearrange ready list and event list */
-		event_monitor_serve(&event_monitor);
-
-		/* Check whether to context switch */
-		task = &tasks[current_task];
-		if (timeup && ready_list[task->priority].next == &task->list)
-		    list_push(&ready_list[task->priority], &tasks[current_task].list);
-
-		/* Select next TASK_READY task */
-		for (i = 0; list_empty(&ready_list[i]); i++);
-
-		list = ready_list[i].next;
-		task = list_entry(list, struct task_control_block, list);
-		current_task = task->pid;
-	}
+	task_start();	
 
 	return 0;
 }
+
+/*
+ *	syscall handler
+ */
+
+void syscall_handler(){
+
+    switch (current_tcb->stack->r7) {
+    case 0x1: /* fork */
+        if (task_count == TASK_LIMIT) {
+            /* Cannot create a new task, return error */
+            current_tcb->stack->r0 = -1;
+        }
+        else {
+            /* Compute how much of the stack is used */
+            size_t used = stacks[current_task] + STACK_SIZE
+                      - (unsigned int*)current_tcb->stack;
+            /* New stack is END - used */
+            tasks[task_count].stack = (void*)(stacks[task_count] + STACK_SIZE - used);
+            /* Copy only the used part of the stack */
+            memcpy(tasks[task_count].stack, current_tcb->stack,
+                   used * sizeof(unsigned int));
+            /* Set PID */
+            tasks[task_count].pid = task_count;
+            /* Set priority, inherited from forked task */
+            tasks[task_count].priority = current_tcb->priority;
+			/* Set return values in each process */
+            current_tcb->stack->r0 = task_count;
+            tasks[task_count].stack->r0 = 0;
+            list_init(&tasks[task_count].list);
+            list_push(&ready_list[tasks[task_count].priority], &tasks[task_count].list);
+            /* There is now one more task */
+            task_count++;
+        }
+        break;
+    case 0x2: /* getpid */
+        current_tcb->stack->r0 = current_task;
+        break;
+    case 0x3: /* write */
+        {
+            /* Check fd is valid */
+            int fd = current_tcb->stack->r0;
+            if (fd < FILE_LIMIT && files[fd]) {
+                /* Prepare file request, store reference in r0 */
+                requests[current_task].task = current_tcb;
+                requests[current_task].buf =
+                    (void*)current_tcb->stack->r1;
+                requests[current_task].size = current_tcb->stack->r2;
+                current_tcb->stack->r0 =
+                    (int)&requests[current_task];
+
+                /* Write */
+                file_write(files[fd], &requests[current_task],
+                           &event_monitor);
+
+			}
+            else {
+                current_tcb->stack->r0 = -1;
+            }
+        } break;
+    case 0x4: /* read */
+        {
+            /* Check fd is valid */
+            int fd = current_tcb->stack->r0;
+            if (fd < FILE_LIMIT && files[fd]) {
+                /* Prepare file request, store reference in r0 */
+                requests[current_task].task = current_tcb;
+                requests[current_task].buf =
+                    (void*)current_tcb->stack->r1;
+                requests[current_task].size = current_tcb->stack->r2;
+                current_tcb->stack->r0 =
+                    (int)&requests[current_task];
+
+                /* Read */
+                file_read(files[fd], &requests[current_task],
+                          &event_monitor);
+            }
+            else {
+                current_tcb->stack->r0 = -1;
+            }
+        } break;
+    case 0x5: /* interrupt_wait */
+        /* Enable interrupt */
+        NVIC_EnableIRQ(current_tcb->stack->r0);
+		/* Block task waiting for interrupt to happen */
+        event_monitor_block(&event_monitor,
+                            INTR_EVENT(current_tcb->stack->r0),
+                              current_tcb);
+        current_tcb->status = TASK_WAIT_INTR;
+        break;
+     case 0x6: /* getpriority */
+        {
+            int who = current_tcb->stack->r0;
+              if (who > 0 && who < (int)task_count)
+                current_tcb->stack->r0 = tasks[who].priority;
+            else if (who == 0)
+                current_tcb->stack->r0 = current_tcb->priority;
+			else
+				current_tcb->stack->r0 = -1;
+        } break;
+    case 0x7: /* setpriority */
+        {
+            int who = current_tcb->stack->r0;
+            int value = current_tcb->stack->r1;
+            value = (value < 0) ? 0 : ((value > PRIORITY_LIMIT) ? PRIORITY_LIMIT : value);
+            if (who > 0 && who < (int)task_count) {
+                tasks[who].priority = value;
+				if (tasks[who].status == TASK_READY)
+                        list_push(&ready_list[value], &tasks[who].list);
+                }
+                else if (who == 0) {
+                    current_tcb->priority = value;
+                    list_unshift(&ready_list[value], &current_tcb->list);
+                }
+                else {
+                    current_tcb->stack->r0 = -1;
+                    break;
+                }
+                current_tcb->stack->r0 = 0;
+            } break;
+    case 0x8: /* mknod */
+        current_tcb->stack->r0 =
+            file_mknod(current_tcb->stack->r0,
+                       current_tcb->pid,
+                       files,
+                       current_tcb->stack->r2,
+                       &memory_pool,
+                       &event_monitor);
+        break;
+    case 0x9: /* sleep */
+        if (current_tcb->stack->r0 != 0) {
+			current_tcb->stack->r0 += tick_count;
+            event_monitor_block(&event_monitor, TIME_EVENT,
+                                current_tcb);
+            current_tcb->status = TASK_WAIT_TIME;
+        }
+        break;
+    case 0xa: /* lseek */
+        {
+            /* Check fd is valid */
+            int fd = current_tcb->stack->r0;
+            if (fd < FILE_LIMIT && files[fd]) {
+                /* Prepare file request, store reference in r0 */
+                requests[current_task].task = current_tcb;
+                requests[current_task].buf = NULL;
+                requests[current_task].size = current_tcb->stack->r1;
+                requests[current_task].whence = current_tcb->stack->r2;
+                current_tcb->stack->r0 =
+                        (int)&requests[current_task];
+
+                /* Read */
+				file_lseek(files[fd], &requests[current_task],
+					&event_monitor);
+            }
+            else {
+                current_tcb->stack->r0 = -1;
+            }
+        } break;
+	default:
+		break;
+	}
+}
+
+
+void c_usart2_handler(){
+    NVIC_DisableIRQ(USART2_IRQn);
+    event_monitor_release(&event_monitor, INTR_EVENT(USART2_IRQn));
+}
+
+void c_systick_handler(){
+    /* Never disable timer. We need it for pre-emption */
+    timeup = 1;
+    tick_count++;
+    event_monitor_release(&event_monitor, TIME_EVENT);
+}
+
+void context_switch(){
+	int i;
+	struct task_control_block *task;
+    /* Rearrange ready list and event list */
+    event_monitor_serve(&event_monitor);
+	/* Check whether to context switch */
+    task = current_tcb;
+    if (timeup && ready_list[task->priority].next == &task->list){
+        list_push(&ready_list[task->priority], &current_tcb->list);
+		timeup = 0;
+	}
+    /* Select next TASK_READY task */
+    for (i = 0; list_empty(&ready_list[i]); i++);
+
+    list = ready_list[i].next;
+    task = list_entry(list, struct task_control_block, list);
+    current_task = task->pid;
+    current_tcb = &tasks[current_task];
+
+}
+
+
+void __attribute__((naked)) set_pendsv(){
+	__asm volatile(
+		"ldr r4, =0xe000ed04	\n"
+		"mov r5, #0x12000000	\n"
+		"str r5, [r4]			\n"
+		"bx lr					\n"
+	);
+}
+

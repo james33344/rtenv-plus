@@ -1,10 +1,42 @@
 shell rm -f gdb.txt
 file build/main.elf
-target remote :3333
+target ext :3333
 set debug timestamp on
 set logging on
+layout reg
+focus cmd
 
-b Infinite_Loop
-b g_pfnVectors
-b main
+#dprintf src/task.c:280,"current_task = %d, r7 = %d\n",current_task,current_tcb->stack->r7
+#watch current_tcb->stack->r7
+#b SysTick_Handler
+
+#b src/task.c:174
+#commands
+#printf "current_tcb->stack->r0 is %d\n",current_tcb->stack->r0
+#c
+#end
+
+#b src/kernel.c:315
+#commands
+#printf "ch is %c\n",put_ch[0]
+#end
+
+#b src/path.c:45
+#b file_read
+#b src/kernel.c:198
+#b src/kernel.c:112
+#b USART2_IRQHandler
+#b check_keyword
+
+#b src/kernel.c:145
+#commands
+#printf "c is = %c\n",c
+#end
+b SVC_Handler
+b context_switch
+b syscall_handler
+commands
+printf "current_tcb->stack->r7 is %d\n",current_tcb->stack->r7
+end
+
 c
