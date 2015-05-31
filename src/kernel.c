@@ -110,11 +110,7 @@ void serialout(USART_TypeDef* uart, unsigned int intr)
 //			USART_SendData(uart, c);
 			USART_SendData((USART_TypeDef *)USART2, c);
 			doread = 1;
-//			USART_ITConfig(USART2, USART_IT_TXE, ENABLE);
 		}
-//		interrupt_wait(intr);
-//		interrupt_wait(USART2_IRQn);
-//		USART_ITConfig(USART2, USART_IT_TXE, DISABLE);
 	}
 }
 
@@ -163,7 +159,6 @@ void greeting2()
 		while (*string) {
 			char c = *string;
 			if (USART_GetFlagStatus((USART_TypeDef *)USART2, USART_FLAG_TXE) == SET) {
-//				USART_SendData(uart, c);
 				USART_SendData((USART_TypeDef *)USART2, c);
 				string++;
 			}
@@ -196,7 +191,6 @@ void rs232_xmit_msg_task()
 
 	fdin = mq_open("/tmp/mqueue/out", 0);
 	fdout = open("/dev/tty0/out", 0);
-//	setpriority(0, PRIORITY_DEFAULT - 2);
 
 	while (1) {
 		/* Read from the queue.  Keep trying until a message is
@@ -838,14 +832,6 @@ int main()
 	task_create(10, serial_test_task);
 
 //	task_create(24, idle);
-#if 0
-	task_create(0, pathserver);
-	task_create(0, serialin);
-	task_create(0, queue_str_task1);
-	task_create(0, queue_str_task2);
-	task_create(0, serialout);
-	task_create(0, rs232_xmit_msg_task);
-#endif
 	current_tcb = &tasks[current_task];
 //	mount("/dev/rom0", "/", ROMFS_TYPE, 0);
 
