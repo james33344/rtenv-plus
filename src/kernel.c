@@ -30,7 +30,12 @@
 #define MAX_ENVNAME 15
 #define MAX_ENVVALUE 63
 
+extern int task_start();
+
 /*Global Variables*/
+char keyup[4] = {'\x1b', '\x5b', '\x41', '\0'};
+char keydown[4] = {'\x1b', '\x5b', '\x42', '\0'};
+int key_count = 0;
 char next_line[3] = {'\n','\r','\0'};
 char cmd[HISTORY_COUNT][CMDBUF_SIZE];
 int cur_his=0;
@@ -55,6 +60,7 @@ void show_task_info(int argc, char *argv[]);
 void show_man_page(int argc, char *argv[]);
 void show_history(int argc, char *argv[]);
 void show_xxd(int argc, char *argv[]);
+void show_keyup();
 
 /* Enumeration for command types. */
 enum {
@@ -291,23 +297,33 @@ void serial_test_task()
 
 		while (1) {
 			read(fdin, put_ch, 1);
-
+			key_count++;
 			if (put_ch[0] == '\r' || put_ch[0] == '\n') {
 				*p = '\0';
 				write(fdout, next_line, 3);
 				break;
 			}
 			else if (put_ch[0] == 127 || put_ch[0] == '\b') {
-				if (p > cmd[cur_his]) {
+				if (p > cmd[cur_his] && key_count) {
 					p--;
 					write(fdout, "\b \b", 4);
+					key_count--;
 				}
 			}
 			else if (p - cmd[cur_his] < CMDBUF_SIZE - 1) {
 				*p++ = put_ch[0];
 				write(fdout, put_ch, 2);
+				/*	press keyboard 'up' show last history	*/
+				if(key_count > 2 && !strncmp(p-3, keyup, 3)){
+					write(fdout, keydown, 4);
+					key_count -= 3;
+					show_keyup();
+					p = cmd[cur_his] + key_count;
+					continue;
+				}
 			}
 		}
+		key_count = 0;
 		check_keyword();	
 	}
 }
@@ -490,7 +506,8 @@ void show_task_info(int argc, char* argv[])
 	write(fdout, &ps_message , ps_message_length);
 	write(fdout, &next_line , 3);
 
-	for (task_i = 0; task_i < task_count; task_i++) {
+	for (task_i = 0; task_i < TASK_LIMIT; task_i++) {
+		if(tasks[task_i].inuse==0)continue;
 		char task_info_pid[2];
 		char task_info_status[2];
 		char task_info_priority[3];
@@ -729,12 +746,28 @@ void show_xxd(int argc, char *argv[])
     }
 }
 
+
+void show_keyup(){
+
+	int i = (cur_his==0 ? HISTORY_COUNT - 1 : cur_his - 1);
+	int j;
+	if (cmd[i][0]) {
+		for(j=0; j < key_count; j++){
+			write(fdout, "\b \b", 4);
+		}
+		key_count = strlen(cmd[i]);
+		write(fdout, cmd[i], key_count + 1);
+		strcpy(cmd[cur_his], "");
+
+		cur_his = i;
+	}
+}
+
 void idle(){
 	char *string = "idle\n\r";
 		while (*string) {
 			char c = *string;
 			if (USART_GetFlagStatus((USART_TypeDef *)USART2, USART_FLAG_TXE) == SET) {
-//				USART_SendData(uart, c);
 				USART_SendData((USART_TypeDef *)USART2, c);
 				string++;
 			}
@@ -743,21 +776,9 @@ void idle(){
 	while(1);	
 }
 
-void first()
-{
-	if (!fork()) pathserver();
-	if (!fork()) romdev_driver();
-	if (!fork()) romfs_server();
-	if (!fork()) serialout(USART2, USART2_IRQn);
-	if (!fork()) serialin(USART2, USART2_IRQn);
-	if (!fork()) serial_test_task();
-	if (!fork()) rs232_xmit_msg_task();
-
-	setpriority(0, PRIORITY_LIMIT);
-
+void mount_task(){
 	mount("/dev/rom0", "/", ROMFS_TYPE, 0);
-
-	while(1);
+	task_exit(NULL);
 }
 
 int intr_release(struct event_monitor *monitor, int event,
@@ -819,26 +840,27 @@ int main()
 
 	event_monitor_register(&event_monitor, TIME_EVENT, time_release, &tick_count);
     /* Initialize all task threads */
-	task_create(0, pathserver);
-//	task_create(0, romdev_driver);
-//	task_create(0, romfs_server);
+	task_create(0, pathserver, NULL);
+	task_create(0, romdev_driver, NULL);
+	task_create(0, romfs_server, NULL);
 //	task_create(0, greeting);
 //	task_create(0, greeting2);
-	task_create(0, serialout);
-	task_create(0, serialin);
+	task_create(0, serialout, NULL);
+	task_create(0, serialin, NULL);
 
-//	task_create(0, serialout);
-	task_create(18, rs232_xmit_msg_task);
-	task_create(10, serial_test_task);
+	task_create(0, mount_task, NULL);
+	task_create(18, rs232_xmit_msg_task, NULL);
+	task_create(10, serial_test_task, NULL);
+	
 
 //	task_create(24, idle);
 	current_tcb = &tasks[current_task];
-//	mount("/dev/rom0", "/", ROMFS_TYPE, 0);
 
 	SysTick_Config(configCPU_CLOCK_HZ / configTICK_RATE_HZ);
 
 	task_start();	
-
+	
+	/*	never execute here	*/
 	return 0;
 }
 
@@ -1042,6 +1064,7 @@ void context_switch(){
 void __attribute__((naked)) set_pendsv(){
 	__asm volatile(
 		"ldr r4, =0xe000ed04	\n"
+		/*	Pending PendSV */
 		"mov r5, #0x12000000	\n"
 		"str r5, [r4]			\n"
 		"bx lr					\n"
