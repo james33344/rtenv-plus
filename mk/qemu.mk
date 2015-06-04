@@ -5,11 +5,25 @@ qemu: $(OUTDIR)/$(TARGET).bin $(QEMU_STM32)
 		-monitor stdio \
 		-kernel $(OUTDIR)/$(TARGET).bin
 
+qemud: $(OUTDIR)/$(TARGET).bin $(QEMU_STM32)
+	$(QEMU_STM32) -M stm32-p103 \
+		-monitor stdio \
+		-gdb tcp::3333 -S \
+		-kernel $(OUTDIR)/$(TARGET).bin
+
+qemugrasp: $(OUTDIR)/$(TARGET).bin $(QEMU_STM32)
+	bash tool/emulate_grasp.sh $(OUTDIR)/$(TARGET).bin
+	python log2grasp.py
+	../grasp_linux/grasp sched.grasp
+
+run:
+	$(CROSS_COMPILE)gdb -x $(TOOLDIR)/gdbscript
+
 qemudbg: $(OUTDIR)/$(TARGET).bin $(QEMU_STM32)
 	$(QEMU_STM32) -M stm32-p103 \
 		-monitor stdio \
 		-gdb tcp::3333 -S \
-		-kernel $(OUTDIR)/$(TARGET).bin 2>&1>/dev/null & \
+		-kernel $(OUTDIR)/$(TARGET).bin -semihosting 2>&1>/dev/null & \
 	echo $$! > $(OUTDIR)/qemu_pid && \
 	$(CROSS_COMPILE)gdb -x $(TOOLDIR)/gdbscript && \
 	cat $(OUTDIR)/qemu_pid | `xargs kill 2>/dev/null || test true` && \
