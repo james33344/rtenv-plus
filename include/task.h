@@ -39,10 +39,13 @@ struct task_control_block {
     int pid;
     int status;
     int priority;
+	int inuse;
 
     struct list list;
 };
 
 unsigned int *init_task(unsigned int *stack, void (*start)());
+void task_create(int priority, void *func, void *arg);
+void task_exit(void*);
 
 #endif

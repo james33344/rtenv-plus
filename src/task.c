@@ -41,6 +41,7 @@ extern struct event_monitor event_monitor;
 extern struct list *list;
 
 int prv_priority = PRIORITY_DEFAULT;
+
 unsigned int *init_task(unsigned int *stack, void (*start)())
 {
 	stack += STACK_SIZE - 18; /* End of stack, minus what we're about to push */
@@ -50,14 +51,37 @@ unsigned int *init_task(unsigned int *stack, void (*start)())
 	return stack;
 }
 
-void task_create(int priority, void *func){
+static int task_search_empty(){
+	int i;
+	for(i=0; i<TASK_LIMIT; i++){
+		if(tasks[i].inuse == 0)
+			break;
+	}
+	return i;
+}
 
-    tasks[task_count].stack = (void*)init_task(stacks[task_count], func);
-    tasks[task_count].pid = task_count;
-    tasks[task_count].priority = priority;
-    list_init(&tasks[task_count].list);
-    list_push(&ready_list[tasks[task_count].priority], &tasks[task_count].list);
+void task_create(int priority, void *func, void *arg){
+	int task_pid;
+	if(task_count == TASK_LIMIT || (task_pid = task_search_empty())==TASK_LIMIT){
+		return;
+	}	
+    tasks[task_pid].stack = (void*)init_task(stacks[task_pid], func);
+    tasks[task_pid].pid = task_pid;
+    tasks[task_pid].priority = priority;
+    tasks[task_pid].inuse = 1;
+    list_init(&tasks[task_pid].list);
+    list_push(&ready_list[tasks[task_pid].priority], &tasks[task_pid].list);
     task_count++;
+}
 
+void task_exit(void* ptr){
+	_disable_irq();
+	list_remove(&current_tcb->list);	
+	/*	Never context switch here	*/
+	current_tcb->inuse = 0;
+	task_count--;
+	_enable_irq();
+	
+	while(1);
 }
 
