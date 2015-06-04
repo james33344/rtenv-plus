@@ -93,5 +93,5 @@ task_start:
 	msr psp, r0
 	mov r0, #3
 	msr control, r0
-
+	isb
 	bx lr
