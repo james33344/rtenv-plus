@@ -23,22 +23,12 @@
 #include "romfs.h"
 #include <stddef.h>
 
-extern unsigned int tick_count;
-
 /* System resources */
 extern struct task_control_block tasks[TASK_LIMIT];
 extern unsigned int stacks[TASK_LIMIT][STACK_SIZE];
-extern char memory_space[MEM_LIMIT];
-extern struct file *files[FILE_LIMIT];
-extern struct file_request requests[TASK_LIMIT];
 extern struct list ready_list[PRIORITY_LIMIT + 1];  /* [0 ... 39] */
-extern struct event events[EVENT_LIMIT];
-extern size_t current_task;
 extern size_t task_count;
 extern struct task_control_block *current_tcb;
-extern struct memory_pool memory_pool;
-extern struct event_monitor event_monitor;
-extern struct list *list;
 
 int prv_priority = PRIORITY_DEFAULT;
 
@@ -74,14 +64,18 @@ void task_create(int priority, void *func, void *arg){
     task_count++;
 }
 
-void task_exit(void* ptr){
+void task_kill(int pid){
 	_disable_irq();
-	list_remove(&current_tcb->list);	
+	list_remove(&tasks[pid].list);
 	/*	Never context switch here	*/
-	current_tcb->inuse = 0;
+	tasks[pid].inuse = 0;
 	task_count--;
 	_enable_irq();
-	
+
 	while(1);
+}
+
+void task_exit(void* ptr){
+	task_kill(current_tcb->pid);
 }
 
