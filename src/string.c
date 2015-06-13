@@ -1,6 +1,10 @@
 #include "string.h"
 
-#include "stm32f10x.h"
+#ifndef STM32F4
+	#include "stm32f10x.h"
+#else
+	#include "stm32f4xx.h"
+#endif
 
 
 
