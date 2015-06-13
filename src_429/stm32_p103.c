@@ -152,7 +152,7 @@ void init_rs232(void)
 
 
     /* Configure the USART2 */
-    USART_InitStructure.USART_BaudRate = 9600;
+    USART_InitStructure.USART_BaudRate = 115200;
     USART_InitStructure.USART_WordLength = USART_WordLength_8b;
     USART_InitStructure.USART_StopBits = USART_StopBits_1;
     USART_InitStructure.USART_Parity = USART_Parity_No;
