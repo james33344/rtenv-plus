@@ -122,6 +122,23 @@ $(OUTDIR_429)/%.o: %.s
 
 flash:
 	st-flash write $(OUTDIR_429)/main.bin 0x8000000
+runstm: 
+	@echo " Debuggin..."
+	@$(CROSS_COMPILE)gdb $(OUTDIR_429)/main.bin \
+		-ex 'target remote :3333' \
+		-ex 'monitor reset halt' \
+		-ex 'load' \
+		-ex 'monitor arm semihosting enable' \
+		-ex 'continue'
+
+runstmdbg:
+	@echo " Debuggin..."
+	@$(CROSS_COMPILE)gdb $(OUTDIR_429)/main.elf \
+		-ex 'target remote :3333' \
+		-ex 'monitor reset halt' \
+		-ex 'load' \
+		-ex 'monitor arm semihosting enable' 
+	@echo " Start to dgb!!"
 
 openocd:
 	openocd -f board/stm32f4discovery.cfg
