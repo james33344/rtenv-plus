@@ -3,13 +3,13 @@ QEMU_STM32 ?= ../qemu_stm32/arm-softmmu/qemu-system-arm
 qemu: $(OUTDIR)/$(TARGET).bin $(QEMU_STM32)
 	$(QEMU_STM32) -M stm32-p103 \
 		-monitor stdio \
-		-kernel $(OUTDIR)/$(TARGET).bin
+		-kernel $(OUTDIR)/$(TARGET).bin -semihosting
 
 qemud: $(OUTDIR)/$(TARGET).bin $(QEMU_STM32)
 	$(QEMU_STM32) -M stm32-p103 \
 		-monitor stdio \
 		-gdb tcp::3333 -S \
-		-kernel $(OUTDIR)/$(TARGET).bin
+		-kernel $(OUTDIR)/$(TARGET).bin -semihosting
 
 qemugrasp: $(OUTDIR)/$(TARGET).bin $(QEMU_STM32)
 	bash tool/emulate_grasp.sh $(OUTDIR)/$(TARGET).bin

@@ -19,6 +19,9 @@
 #include "event-monitor.h"
 #include "romfs.h"
 #include <stddef.h>
+#include "trace.h"
+
+char str[5] = "test";
 
 /* System resources */
 extern struct task_control_block tasks[TASK_LIMIT];
@@ -59,6 +62,11 @@ void task_create(int priority, void *func, void *arg){
     list_init(&tasks[task_pid].list);
     list_push(&ready_list[tasks[task_pid].priority], &tasks[task_pid].list);
     task_count++;
+#ifdef TRACE
+	trace_task_create(&tasks[task_pid], str, priority);	
+#endif
+
+
 }
 
 void task_kill(int pid){

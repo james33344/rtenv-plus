@@ -25,6 +25,8 @@
 #include "romdev.h"
 #include "event-monitor.h"
 #include "romfs.h"
+#include "trace.h"
+#include "host.h"
 
 #define MAX_CMDNAME 19
 #define MAX_ARGC 19
@@ -36,6 +38,9 @@
 #define MAX_ENVVALUE 63
 
 extern int task_start();
+extern int logfile;
+unsigned int prev_tick = 0;
+unsigned int prev_task;
 
 /*Global Variables*/
 char keyup[4] = {'\x1b', '\x5b', '\x41', '\0'};
@@ -818,7 +823,9 @@ struct list *list;
 int main()
 {
 	int i;
-	
+#ifdef TRACE	
+	logfile = host_action(SYS_OPEN, "logqemu", 4);
+#endif
 	init_rs232();
 
     /* Initialize memory pool */
@@ -853,10 +860,9 @@ int main()
 	task_create(0, serialout, NULL);
 	task_create(0, serialin, NULL);
 
-	task_create(0, mount_task, NULL);
 	task_create(18, rs232_xmit_msg_task, NULL);
 	task_create(10, serial_test_task, NULL);
-	
+	task_create(0, mount_task, NULL);
 
 //	task_create(24, idle);
 	current_tcb = &tasks[current_task];
@@ -1076,3 +1082,15 @@ void __attribute__((naked)) set_pendsv(){
 	);
 }
 
+void trace_pendsv_switch_prev(){
+#ifdef TRACE
+	prev_tick = get_current();
+	prev_task = (unsigned int)current_tcb;
+#endif
+}
+
+void trace_pendsv_switch_now(){
+#ifdef TRACE
+	trace_task_switch((void *)prev_task, prev_tick, current_tcb);
+#endif
+}

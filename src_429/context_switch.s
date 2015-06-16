@@ -24,6 +24,10 @@ SysTick_Handler:
 	.global PendSV_Handler
 PendSV_Handler:
 	cpsid i
+push {lr}
+bl trace_pendsv_switch_prev
+pop {lr}
+
 	mrs r0, psp
 
 	ldr r3, =current_tcb
@@ -44,6 +48,10 @@ PendSV_Handler:
 	ldmia r0!, {r4-r11,ip}
 	ldmia r0!, {r7}
 	msr psp, r0
+push {lr}
+bl trace_pendsv_switch_now
+pop {lr}
+
 	cpsie i
 	bx lr
 

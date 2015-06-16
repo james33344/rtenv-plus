@@ -25,6 +25,8 @@
 #include "romdev.h"
 #include "event-monitor.h"
 #include "romfs.h"
+#include "trace.h"
+#include "host.h"
 
 #define MAX_CMDNAME 19
 #define MAX_ARGC 19
@@ -36,6 +38,9 @@
 #define MAX_ENVVALUE 63
 
 extern int task_start();
+extern int logfile;
+unsigned int prev_tick = 0;
+unsigned int prev_task;
 
 /*Global Variables*/
 char keyup[4] = {'\x1b', '\x5b', '\x41', '\0'};
@@ -509,7 +514,7 @@ void show_task_info(int argc, char* argv[])
 	int task_i;
 
 	write(fdout, &ps_message , ps_message_length);
-	write(fdout, next_line , 3);
+	write(fdout, &next_line , 3);
 
 	for (task_i = 0; task_i < TASK_LIMIT; task_i++) {
 		if(tasks[task_i].inuse==0)continue;
@@ -530,7 +535,7 @@ void show_task_info(int argc, char* argv[])
 		write_blank(5);
 		write(fdout, &task_info_priority , 3);
 
-		write(fdout, next_line , 3);
+		write(fdout, &next_line , 3);
 	}
 }
 
@@ -818,9 +823,10 @@ struct list *list;
 int main()
 {
 	int i;
-	
 	init_rs232();
-
+#ifdef TRACE	
+	logfile = host_action(SYS_OPEN, "log", 4);
+#endif
     /* Initialize memory pool */
     memory_pool_init(&memory_pool, MEM_LIMIT, memory_space);
 
@@ -853,10 +859,9 @@ int main()
 	task_create(0, serialout, NULL);
 	task_create(0, serialin, NULL);
 
-	task_create(0, mount_task, NULL);
 	task_create(18, rs232_xmit_msg_task, NULL);
 	task_create(10, serial_test_task, NULL);
-	
+	task_create(0, mount_task, NULL);
 
 //	task_create(24, idle);
 	current_tcb = &tasks[current_task];
@@ -1076,3 +1081,15 @@ void __attribute__((naked)) set_pendsv(){
 	);
 }
 
+void trace_pendsv_switch_prev(){
+#ifdef TRACE
+	prev_tick = get_current();
+	prev_task = (unsigned int)current_tcb;
+#endif
+}
+
+void trace_pendsv_switch_now(){
+#ifdef TRACE
+	trace_task_switch((void *)prev_task, prev_tick, current_tcb);
+#endif
+}
