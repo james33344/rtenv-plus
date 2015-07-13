@@ -9,6 +9,7 @@
 #define NVIC_INTERRUPTx_PRIORITY ( ( volatile unsigned char *) 0xE000E400 )
 int logfile = 0;
 extern int tick_count;
+int prev_t = 0;
 
 int get_interrupt_priority(int interrupt)
 {
@@ -188,19 +189,21 @@ void trace_queue_block(void *task,
 
 void trace_interrupt_in()
 {
+	prev_t = get_current();
 	char buf[128];
 	int number = get_current_interrupt_number();
-	int len = snprintf(buf, 128, "interrupt in %d %d %d\n", get_time(),
+	int len = snprintf(buf, 128, "interrupt in %d %d %d\n", prev_t,
 	                   number, get_interrupt_priority(number));
 	host_action(SYS_WRITE, logfile, buf, len);
 }
 
 void trace_interrupt_out()
 {
+	int t = get_current();
 	char buf[128];
 	int number = get_current_interrupt_number();
 	int len = snprintf(buf, 128, "interrupt out %d %d\n",
-	                   get_time(), number);
+	                   prev_t-t, number);
 	host_action(SYS_WRITE, logfile, buf, len);
 }
 

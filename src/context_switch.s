@@ -56,6 +56,9 @@ pop {lr}
 	.type SVC_Handler, %function
 	.global SVC_Handler
 SVC_Handler:
+#push {lr}
+#bl trace_interrupt_in
+#pop {lr}
 	push {lr}
 	
 	mrs r0, psp
@@ -78,6 +81,7 @@ SVC_Handler:
 	ldmia r0!, {r7}
 
 	bl set_pendsv
+#bl trace_interrupt_out
 	pop {lr}
 	bx lr
 	
