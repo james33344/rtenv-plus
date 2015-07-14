@@ -786,6 +786,8 @@ void idle(){
 	while(1);	
 }
 
+int main() __attribute__((weak));
+
 void mount_task(){
 	mount("/dev/rom0", "/", ROMFS_TYPE, 0);
 	task_exit(NULL);
@@ -820,7 +822,7 @@ struct memory_pool memory_pool;
 struct event_monitor event_monitor;
 struct list *list;
 
-int main()
+int __rtenv_start()
 {
 	int i;
 #ifdef TRACE	
@@ -856,7 +858,6 @@ int main()
 	task_create(0, romdev_driver, NULL);
 	task_create(0, romfs_server, NULL);
 //	task_create(0, greeting);
-//	task_create(0, greeting2);
 	task_create(0, serialout, NULL);
 	task_create(0, serialin, NULL);
 
