@@ -1,4 +1,4 @@
-ENTRY(main)
+ENTRY(__rtenv_start)
 MEMORY
 {
   FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 128K
