@@ -8,7 +8,8 @@ CFLAGS = -fno-common -ffreestanding -O0 \
          -gdwarf-2 -g3 -Wall -Werror \
          -mcpu=cortex-m3 -mthumb \
          -Wl,-Tmain.ld -nostartfiles \
-         -DUSER_NAME=\"$(USER)\"
+         -DUSER_NAME=\"$(USER)\"	\
+		 -std=c11
 
 CFLAGS_429 = $(CFLAGS) -DSTM32F4
 
