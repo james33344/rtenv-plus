@@ -94,6 +94,7 @@ LoopFillZerobss:
   bl  SystemInit 	
 /* Call the application's entry point.*/
 	bl	__rtenv_start
+	bl main
 	bx	lr    
 .size	Reset_Handler, .-Reset_Handler
 

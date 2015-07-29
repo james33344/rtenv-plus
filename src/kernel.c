@@ -786,7 +786,6 @@ void idle(){
 	while(1);	
 }
 
-int main() __attribute__((weak));
 
 void mount_task(){
 	mount("/dev/rom0", "/", ROMFS_TYPE, 0);
@@ -1095,3 +1094,11 @@ void trace_pendsv_switch_now(){
 	trace_task_switch((void *)prev_task, prev_tick, current_tcb);
 #endif
 }
+
+int main() __attribute__((weak));
+
+int main() {
+	return 0;
+}
+
+
