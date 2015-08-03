@@ -3,16 +3,16 @@
 
 
 
-#define __SIZEOF_PTHREAD_ATTR_T 36
-#define __SIZEOF_PTHREAD_MUTEX_T 24
-#define __SIZEOF_PTHREAD_MUTEXATTR_T 4
-#define __SIZEOF_PTHREAD_COND_T 48
-#define __SIZEOF_PTHREAD_COND_COMPAT_T 12
-#define __SIZEOF_PTHREAD_CONDATTR_T 4
-#define __SIZEOF_PTHREAD_RWLOCK_T 32
-#define __SIZEOF_PTHREAD_RWLOCKATTR_T 8
-#define __SIZEOF_PTHREAD_BARRIER_T 20
-#define __SIZEOF_PTHREAD_BARRIERATTR_T 4
+#define SIZEOF_PTHREAD_ATTR_T 36
+#define SIZEOF_PTHREAD_MUTEX_T 24
+#define SIZEOF_PTHREAD_MUTEXATTR_T 4
+#define SIZEOF_PTHREAD_COND_T 48
+#define SIZEOF_PTHREAD_COND_COMPAT_T 12
+#define SIZEOF_PTHREAD_CONDATTR_T 4
+#define SIZEOF_PTHREAD_RWLOCK_T 32
+#define SIZEOF_PTHREAD_RWLOCKATTR_T 8
+#define SIZEOF_PTHREAD_BARRIER_T 20
+#define SIZEOF_PTHREAD_BARRIERATTR_T 4
 
 
 
@@ -20,47 +20,47 @@ typedef unsigned long int pthread_t;
 
 
 union pthread_attr_t {
-  char __size[__SIZEOF_PTHREAD_ATTR_T];
-  long int __align;
+  char size[SIZEOF_PTHREAD_ATTR_T];
+  long int align;
 };
-#ifndef __have_pthread_attr_t
+#ifndef have_pthread_attr_t
 typedef union pthread_attr_t pthread_attr_t;
-# define __have_pthread_attr_t	1
+# define have_pthread_attr_t	1
 #endif
 
 
 
-typedef struct __pthread_internal_slist {
-  struct __pthread_internal_slist *__next;
-} __pthread_slist_t;
+typedef struct pthread_internal_slist {
+  struct pthread_internal_slist *next;
+} pthread_slist_t;
 
 
 /* Data structures for mutex handling.  The structure of the attribute
    type is not exposed on purpose.  */
 typedef union {
-	struct __pthread_mutex_s {
-		int __lock;
-		unsigned int __count;
-		int __owner;
+	struct pthread_mutex_s {
+		int lock;
+		unsigned int count;
+		int owner;
 		/* KIND must stay at this position in the structure to maintain
 		binary compatibility.  */
-		int __kind;
-		unsigned int __nusers;
+		int kind;
+		unsigned int nusers;
 		union {
-			int __spins;
-			__pthread_slist_t __list;
+			int spins;
+			pthread_slist_t list;
 		};
-  } __data;
-		char __size[__SIZEOF_PTHREAD_MUTEX_T];
-		long int __align;
+  } data;
+		char size[SIZEOF_PTHREAD_MUTEX_T];
+		long int align;
 } pthread_mutex_t;
 
-/* Mutex __spins initializer used by PTHREAD_MUTEX_INITIALIZER.  */
-#define __PTHREAD_SPINS 0
+/* Mutex spins initializer used by PTHREAD_MUTEX_INITIALIZER.  */
+#define PTHREAD_SPINS 0
 
 typedef union {
-  char __size[__SIZEOF_PTHREAD_MUTEXATTR_T];
-  long int __align;
+  char size[SIZEOF_PTHREAD_MUTEXATTR_T];
+  long int align;
 } pthread_mutexattr_t;
 
 
@@ -68,22 +68,22 @@ typedef union {
    the attribute type is not exposed on purpose.  */
 typedef union {
 	struct {
-		int __lock;
-		unsigned int __futex;
-		unsigned long long int __total_seq;
-		unsigned long long int __wakeup_seq;
-		unsigned long long int __woken_seq;
-		void *__mutex;
-		unsigned int __nwaiters;
-		unsigned int __broadcast_seq;
-  } __data;
-		char __size[__SIZEOF_PTHREAD_COND_T];
-		long long int __align;
+		int lock;
+		unsigned int futex;
+		unsigned long long int total_seq;
+		unsigned long long int wakeup_seq;
+		unsigned long long int woken_seq;
+		void *mutex;
+		unsigned int nwaiters;
+		unsigned int broadcast_seq;
+  } data;
+		char size[SIZEOF_PTHREAD_COND_T];
+		long long int align;
 } pthread_cond_t;
 
 typedef union {
-  char __size[__SIZEOF_PTHREAD_CONDATTR_T];
-  long int __align;
+  char size[SIZEOF_PTHREAD_CONDATTR_T];
+  long int align;
 } pthread_condattr_t;
 
 
@@ -95,42 +95,42 @@ typedef unsigned int pthread_key_t;
 typedef int pthread_once_t;
 
 
-#if defined __USE_UNIX98 || defined __USE_XOPEN2K
+#if defined USE_UNIX98 || defined USE_XOPEN2K
 /* Data structure for read-write lock variable handling.  The
    structure of the attribute type is not exposed on purpose.  */
 typedef union
 {
   struct
   {
-    int __lock;
-    unsigned int __nr_readers;
-    unsigned int __readers_wakeup;
-    unsigned int __writer_wakeup;
-    unsigned int __nr_readers_queued;
-    unsigned int __nr_writers_queued;
+    int lock;
+    unsigned int nr_readers;
+    unsigned int readers_wakeup;
+    unsigned int writer_wakeup;
+    unsigned int nr_readers_queued;
+    unsigned int nr_writers_queued;
     /* FLAGS must stay at this position in the structure to maintain
        binary compatibility.  */
-    unsigned char __flags;
-    unsigned char __shared;
-    unsigned char __pad1;
-    unsigned char __pad2;
-    int __writer;
-  } __data;
-  char __size[__SIZEOF_PTHREAD_RWLOCK_T];
-  long int __align;
+    unsigned char flags;
+    unsigned char shared;
+    unsigned char pad1;
+    unsigned char pad2;
+    int writer;
+  } data;
+  char size[SIZEOF_PTHREAD_RWLOCK_T];
+  long int align;
 } pthread_rwlock_t;
 
-#define __PTHREAD_RWLOCK_ELISION_EXTRA 0
+#define PTHREAD_RWLOCK_ELISION_EXTRA 0
 
 typedef union
 {
-  char __size[__SIZEOF_PTHREAD_RWLOCKATTR_T];
-  long int __align;
+  char size[SIZEOF_PTHREAD_RWLOCKATTR_T];
+  long int align;
 } pthread_rwlockattr_t;
 #endif
 
 
-#ifdef __USE_XOPEN2K
+#ifdef USE_XOPEN2K
 /* POSIX spinlock data type.  */
 typedef volatile int pthread_spinlock_t;
 
@@ -139,14 +139,14 @@ typedef volatile int pthread_spinlock_t;
    deliberately not exposed.  */
 typedef union
 {
-  char __size[__SIZEOF_PTHREAD_BARRIER_T];
-  long int __align;
+  char size[SIZEOF_PTHREAD_BARRIER_T];
+  long int align;
 } pthread_barrier_t;
 
 typedef union
 {
-  char __size[__SIZEOF_PTHREAD_BARRIERATTR_T];
-  int __align;
+  char size[SIZEOF_PTHREAD_BARRIERATTR_T];
+  int align;
 } pthread_barrierattr_t;
 #endif
 
