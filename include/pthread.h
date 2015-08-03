@@ -50,4 +50,8 @@ int pthread_create(pthread_t *restrict thread,
 					void *restrict arg) __attribute__((nonnull (1, 3)));
 
 
+pthread_t pthread_self();
+
+
 #endif
+
