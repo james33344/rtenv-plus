@@ -10,7 +10,7 @@
 
 int strcmp(const char *a, const char *b)
 {
-	asm(
+	__asm(
         "strcmp_lop:                \n"
         "   ldrb    r2, [r0],#1     \n"
         "   ldrb    r3, [r1],#1     \n"
@@ -37,7 +37,7 @@ int strncmp(const char *a, const char *b, size_t n)
 
 size_t strlen(const char *s)
 {
-	asm(
+	__asm(
 		"	sub  r3, r0, #1			\n"
         "strlen_loop:               \n"
 		"	ldrb r2, [r3, #1]!		\n"
