@@ -2,6 +2,10 @@ TARGET = main
 TARGET_STMF4 = main
 .DEFAULT_GOAL = all
 
+APP_DIR = 
+
+include app/build.mk
+
 CROSS_COMPILE ?= arm-none-eabi-
 CC := $(CROSS_COMPILE)gcc
 CFLAGS = -fno-common -ffreestanding -O0 \
@@ -32,11 +36,13 @@ OUTDIR_429 = build_stmf4
 SRCDIR = src \
          $(CMSIS_LIB)/CoreSupport \
          $(STM32_LIB)/src \
-         $(CMSIS_PLAT_SRC)
+         $(CMSIS_PLAT_SRC) \
+		 $(APP_DIR)
 INCDIR = include \
          $(CMSIS_LIB)/CoreSupport \
          $(STM32_LIB)/inc \
-         $(CMSIS_PLAT_SRC)
+         $(CMSIS_PLAT_SRC) \
+		 $(APP_DIR)
 INCLUDES = $(addprefix -I,$(INCDIR))
 
 SRCDIR_429 = src_429 \
