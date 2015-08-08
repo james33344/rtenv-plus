@@ -12,7 +12,9 @@ int pthread_create(pthread_t *restrict thread,
 			        void *(*start_routine)(void*), 
 					void *restrict arg) {
 
-	struct task_control_block* tcb = 0;
+	*thread = (pthread_t) malloc(sizeof(pthread_t));
+
+	struct task_control_block* tcb;
 	if (!attr) {
 		tcb = task_create(PRIORITY_DEFAULT, start_routine, NULL);
 	}
@@ -43,4 +45,9 @@ int pthread_equal(pthread_t t1, pthread_t t2) {
 
 void pthread_exit(void *value_ptr) {
 	task_exit(NULL);
+}
+
+int pthread_cancel(pthread_t thread) {
+	task_kill(thread->tcb->pid);
+	return 0;
 }
