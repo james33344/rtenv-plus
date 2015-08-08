@@ -1,7 +1,7 @@
 #ifndef PTHREADTYPES_H
 #define PTHREADTYPES_H
 
-
+#include "task.h"
 
 #define SIZEOF_PTHREAD_ATTR_T 36
 #define SIZEOF_PTHREAD_MUTEX_T 24
@@ -16,24 +16,31 @@
 
 
 
-typedef unsigned long int pthread_t;
+//typedef unsigned long int pthread_t;
 
+struct pthread_struct {
+	struct task_control_block* tcb;
 
-union pthread_attr_t {
-  char size[SIZEOF_PTHREAD_ATTR_T];
-  long int align;
 };
-#ifndef have_pthread_attr_t
-typedef union pthread_attr_t pthread_attr_t;
-# define have_pthread_attr_t	1
-#endif
+
+typedef struct pthread_struct* pthread_t;
+
+struct sched_param {
+	int policy;
+	int sched_priority;
+};
+
+typedef struct pthread_attr_struct {
+	unsigned int stack_size;
+	struct sched_param sched_param;
+} pthread_attr_t;
 
 
+//------------------------check to here--------------------
 
 typedef struct pthread_internal_slist {
   struct pthread_internal_slist *next;
 } pthread_slist_t;
-
 
 /* Data structures for mutex handling.  The structure of the attribute
    type is not exposed on purpose.  */
@@ -151,6 +158,5 @@ typedef union
 #endif
 
 
-
-
 #endif
+
