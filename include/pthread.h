@@ -2,6 +2,7 @@
 #define PTHREAD_H
 #include "pthreadtypes.h"
 
+
 enum
 {
   PTHREAD_CREATE_JOINABLE,
@@ -51,6 +52,8 @@ int pthread_create(pthread_t *restrict thread,
 
 
 pthread_t pthread_self();
+int pthread_equal(pthread_t, pthread_t) __attribute__((nonnull (1, 2)));
+void pthread_exit(void *value_ptr);
 
 
 #endif
