@@ -78,10 +78,10 @@ void task_kill(int pid){
 	--task_count;
 	_enable_irq();
 
-	while(1);
 }
 
 void task_exit(void* ptr){
 	task_kill(current_tcb->pid);
+	while(1);
 }
 
