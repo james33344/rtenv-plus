@@ -41,19 +41,20 @@ unsigned int *init_task(unsigned int *stack, void (*start)())
 	return stack;
 }
 
-static int task_search_empty(){
+static inline int task_search_empty(){
 	int i;
 	for(i=0; i<TASK_LIMIT; i++){
-		if(tasks[i].inuse == 0)
+		if(tasks[i].inuse == 0) {
 			break;
+		}
 	}
 	return i;
 }
 
-void task_create(int priority, void *func, void *arg){
+struct task_control_block* task_create(int priority, void *func, void *arg){
 	int task_pid;
 	if(task_count == TASK_LIMIT || (task_pid = task_search_empty())==TASK_LIMIT){
-		return;
+		return NULL;
 	}	
     tasks[task_pid].stack = (void*)init_task(stacks[task_pid], func);
     tasks[task_pid].pid = task_pid;
@@ -66,7 +67,7 @@ void task_create(int priority, void *func, void *arg){
 	trace_task_create(&tasks[task_pid], str, priority);	
 #endif
 
-
+	return &tasks[task_pid];
 }
 
 void task_kill(int pid){
@@ -74,7 +75,7 @@ void task_kill(int pid){
 	list_remove(&tasks[pid].list);
 	/*	Never context switch here	*/
 	tasks[pid].inuse = 0;
-	task_count--;
+	--task_count;
 	_enable_irq();
 
 	while(1);

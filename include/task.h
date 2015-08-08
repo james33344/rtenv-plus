@@ -45,7 +45,7 @@ struct task_control_block {
 };
 
 unsigned int *init_task(unsigned int *stack, void (*start)());
-void task_create(int priority, void *func, void *arg);
+struct task_control_block* task_create(int priority, void *func, void *arg);
 void task_kill(int pid);
 void task_exit(void* ptr);
 
