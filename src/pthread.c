@@ -5,6 +5,10 @@
 #include "syscall.h"
 #include "malloc.h"
 
+#define get_pthread_attr_priority(attr) ({ \
+	attr->sched_param.sched_priority; \
+})	
+
 extern struct task_control_block* current_tcb;
 
 int pthread_create(pthread_t *restrict thread,
@@ -12,18 +16,19 @@ int pthread_create(pthread_t *restrict thread,
 			        void *(*start_routine)(void*), 
 					void *restrict arg) {
 
-	*thread = (pthread_t) malloc(sizeof(pthread_t));
 
 	struct task_control_block* tcb;
 	if (!attr) {
 		tcb = task_create(PRIORITY_DEFAULT, start_routine, NULL);
 	}
 	else {
-		tcb = task_create(attr->sched_param.sched_priority, start_routine, NULL);
+		if (attr->policy != ATTR_STATE_LEGAL) return EINVAL;
+		tcb = task_create(get_pthread_attr_priority(attr), start_routine, NULL);
 	}
 
 	if (tcb == NULL) return EAGAIN;
 
+	*thread = (pthread_t) malloc(sizeof(pthread_t));
 	(*thread)->tcb = tcb;
 
 	return 0;
@@ -43,7 +48,6 @@ int inline pthread_equal(pthread_t t1, pthread_t t2) {
 	return 0;
 }
 
-
 void inline pthread_exit(void *value_ptr) {
 	task_exit(NULL);
 }
@@ -53,3 +57,38 @@ int pthread_cancel(pthread_t thread) {
 		return 0;
 	return EINVAL;
 }
+
+
+/*
+ * The pthread_attr_init() function shall initialize a thread attributes object attr 
+ * with the default value for all of the individual attributes used by a given implementation.
+ */ 
+int pthread_attr_init(pthread_attr_t *attr) {
+	/*TODO
+	 * thread stack should have it's own range in linking script
+	 * so that we can set stack size in task_create() to desired size
+	 */ 
+	/* TODO
+	 * Add error return
+	 * Ex: EINVAL
+	 */ 
+	attr->stack_size = 0;	
+	attr->detachstate = PTHREAD_CREATE_JOINABLE;
+	attr->sched_param.sched_priority = PRIORITY_DEFAULT;
+	attr->policy = ATTR_STATE_LEGAL;
+
+	return 0;
+}
+
+
+/* TODO
+ * Add error return
+ * Ex: EINVAL
+ */
+int pthread_attr_destroy(pthread_attr_t *attr) {
+	
+	attr->policy = ATTR_STATE_ILEGAL;
+	return 0;	
+}
+
+
