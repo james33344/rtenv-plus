@@ -24,4 +24,3 @@ script:
     - make -j2
     - cd ..
     - make -j2
-    - make qemunographic
