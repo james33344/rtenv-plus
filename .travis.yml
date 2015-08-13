@@ -2,7 +2,7 @@ language: c
 compiler: gcc
 
 env:
-    - QEMU_STM32="qemu_stm32/arm-softmmu/qemu-system-arm -nographic"
+    - QEMU_STM32=qemu_stm32/arm-softmmu/qemu-system-arm
 
 before_install:
     - sudo apt-get install build-essential git zlib1g-dev libsdl1.2-dev libglib2.0-dev "automake*" "autoconf*" libtool libpixman-1-dev
@@ -24,4 +24,4 @@ script:
     - make -j2
     - cd ..
     - make -j2
-    - make qemu
+    - make qemunographic

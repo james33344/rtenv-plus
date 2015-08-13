@@ -19,6 +19,11 @@ qemugrasp: $(OUTDIR)/$(TARGET).bin $(QEMU_STM32)
 run:
 	$(CROSS_COMPILE)gdb -x $(TOOLDIR)/gdbscript
 
+qemunographic: $(OUTDIR)/$(TARGET).bin $(QEMU_STM32)
+	$(QEMU_STM32) -M stm32-p103 \
+		-monitor stdio -nographic \
+		-kernel $(OUTDIR)/$(TARGET).bin -semihosting
+
 qemudbg: $(OUTDIR)/$(TARGET).bin $(QEMU_STM32)
 	$(QEMU_STM32) -M stm32-p103 \
 		-monitor stdio \
