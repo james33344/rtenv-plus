@@ -3,6 +3,10 @@
 #include "pthreadtypes.h"
 #include "erron.h"
 
+#define ATTR_STATE_ILEGAL 0
+#define ATTR_STATE_LEGAL 1
+
+
 enum
 {
   PTHREAD_CREATE_JOINABLE,

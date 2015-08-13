@@ -33,6 +33,7 @@ struct sched_param {
 typedef struct pthread_attr_struct {
 	unsigned int stack_size;
 	int detachstate;
+	int policy;
 	struct sched_param sched_param;
 } pthread_attr_t;
 
