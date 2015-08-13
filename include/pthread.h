@@ -1,14 +1,12 @@
 #ifndef PTHREAD_H
 #define PTHREAD_H
 #include "pthreadtypes.h"
-
+#include "erron.h"
 
 enum
 {
   PTHREAD_CREATE_JOINABLE,
-#define PTHREAD_CREATE_JOINABLE	PTHREAD_CREATE_JOINABLE
   PTHREAD_CREATE_DETACHED
-#define PTHREAD_CREATE_DETACHED	PTHREAD_CREATE_DETACHED
 };
 
 
@@ -55,6 +53,11 @@ pthread_t pthread_self();
 int pthread_equal(pthread_t, pthread_t) __attribute__((nonnull (1, 2)));
 void pthread_exit(void *value_ptr);
 int pthread_cancel(pthread_t thread);
+
+int pthread_attr_init(pthread_attr_t *attr);
+int pthread_attr_destroy(pthread_attr_t *attr);
+int pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate);
+int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate);
 
 
 #endif

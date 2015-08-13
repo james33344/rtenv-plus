@@ -22,7 +22,7 @@ int pthread_create(pthread_t *restrict thread,
 		tcb = task_create(attr->sched_param.sched_priority, start_routine, NULL);
 	}
 
-	if (tcb == NULL) return 1;
+	if (tcb == NULL) return EAGAIN;
 
 	(*thread)->tcb = tcb;
 
@@ -35,19 +35,21 @@ pthread_t pthread_self() {
 	return retval;
 }
 
-int pthread_equal(pthread_t t1, pthread_t t2) {
+int inline pthread_equal(pthread_t t1, pthread_t t2) {
 	if(t1->tcb == t2->tcb) {
+		/*	success	*/
 		return 1;
 	}
 	return 0;
 }
 
 
-void pthread_exit(void *value_ptr) {
+void inline pthread_exit(void *value_ptr) {
 	task_exit(NULL);
 }
 
 int pthread_cancel(pthread_t thread) {
-	task_kill(thread->tcb->pid);
-	return 0;
+	if(!task_kill(thread->tcb->pid));
+		return 0;
+	return EINVAL;
 }
