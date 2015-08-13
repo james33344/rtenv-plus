@@ -8,9 +8,7 @@
 	#include "stm32_p103.h"
 #endif
 #include "RTOSConfig.h"
-
 #include "syscall.h"
-
 #include <stddef.h>
 #include <ctype.h>
 #include <string.h>
@@ -27,15 +25,6 @@
 #include "romfs.h"
 #include "trace.h"
 #include "host.h"
-
-#define MAX_CMDNAME 19
-#define MAX_ARGC 19
-#define MAX_CMDHELP 1023
-#define HISTORY_COUNT 8
-#define CMDBUF_SIZE 64
-#define MAX_ENVCOUNT 16
-#define MAX_ENVNAME 15
-#define MAX_ENVVALUE 63
 
 extern int task_start();
 extern int logfile;
@@ -62,7 +51,6 @@ void idle(){
 				string++;
 			}
 		}
-
 	while(1);	
 }
 
@@ -85,7 +73,7 @@ int time_release(struct event_monitor *monitor, int event,
     return task->stack->r0 == *tick_count;
 }
 
-
+/*	user app entry	*/
 void kernel_thread() {
 	main();
 	task_exit(NULL);
@@ -93,8 +81,8 @@ void kernel_thread() {
 }
 
 
-/*	main
- *
+/*	
+ *	main
  */
 
 /* System resources */
@@ -146,15 +134,8 @@ int __rtenv_start()
 	task_create(0, romfs_server, NULL);
 	task_create(0, mount_task, NULL);
 
-/*
-	task_create(0, serialout, NULL);
-	task_create(0, serialin, NULL);
-	task_create(18, rs232_xmit_msg_task, NULL);
-	task_create(10, serial_test_task, NULL);
-*/
-
 	task_create(PRIORITY_LIMIT, kernel_thread, NULL);
-//	task_create(24, idle);
+
 	current_tcb = &tasks[current_task];
 
 	SysTick_Config(configCPU_CLOCK_HZ / configTICK_RATE_HZ);
@@ -327,7 +308,6 @@ void syscall_handler(){
 	}
 }
 
-
 void c_usart2_handler(){
     NVIC_DisableIRQ(USART2_IRQn);
     event_monitor_release(&event_monitor, INTR_EVENT(USART2_IRQn));
@@ -361,7 +341,6 @@ void context_switch(){
 
 }
 
-
 void __attribute__((naked)) set_pendsv(){
 	__asm volatile(
 		"ldr r4, =0xe000ed04	\n"
@@ -385,9 +364,8 @@ void trace_pendsv_switch_now(){
 #endif
 }
 
-
 int main() {
+	puts("No application to run, check app/ \n\r");
 	return 0;
 }
-
 

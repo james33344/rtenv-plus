@@ -1,26 +1,27 @@
+language: c
+compiler: gcc
 
-
-
+env:
+    - QEMU_STM32=qemu_stm32/arm-softmmu/qemu-system-arm -nographic
 
 before_install:
     - sudo apt-get install build-essential git zlib1g-dev libsdl1.2-dev libglib2.0-dev "automake*" "autoconf*" libtool libpixman-1-dev
     - sudo apt-get update -qq
-    - sudo apt-get install lib32gcc1 lib32ncurses5
+    - sudo add-apt-repository --yes ppa:terry.guo/gcc-arm-embedded
+    - sudo apt-get install lib32gcc1 lib32ncurses5 xorg-dev libsdl1.2debian:i386
     - sudo apt-get update -qq
-    - sudo apt-get install gcc-arm-none-eabi libnewlib-arm-none-eabi gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf qemu-user qemu-system-arm
+    - sudo apt-get install gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf qemu-user gcc-arm-none-eabi
     - sudo apt-get update -qq
-    - sudo apt-get upgrade -qq  
 
-install:
-    - cd ..
+script:
+    - ./.travis_libnewlib-arm.sh
+    - ./.travis_qemu.sh
+
     - git clone git://github.com/beckus/qemu_stm32.git || git clone https://github.com/beckus/qemu_stm32.git
     - cd qemu_stm32
     - git submodule update --init dtc || sudo apt-get install libfdt-dev
-    - ./configure --disable-werror --enable-debug \
-        --target-list="arm-softmmu" \
-        --extra-cflags=-DSTM32_UART_NO_BAUD_DELAY \
-        --extra-cflags=-DSTM32_UART_ENABLE_OVERRUN \
-        --disable-gtk
-    - make
-    - cd rtenv
-    - make
+    - ./configure --disable-werror --enable-debug --target-list="arm-softmmu" --extra-cflags=-DSTM32_UART_NO_BAUD_DELAY --extra-cflags=-DSTM32_UART_ENABLE_OVERRUN --disable-gtk
+    - make -j2
+    - cd ..
+    - make -j2
+    - make qemu
