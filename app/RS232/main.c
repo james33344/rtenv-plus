@@ -716,6 +716,10 @@ int main() {
 	pthread_attr_t a, b, c, d;
 	pthread_t self_t;
 
+	pthread_attr_init(&a);
+	pthread_attr_init(&b);
+	pthread_attr_init(&c);
+	pthread_attr_init(&d);
 	a.sched_param.sched_priority = 0;
 	b.sched_param.sched_priority = 0;
 	c.sched_param.sched_priority = 18;
