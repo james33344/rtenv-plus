@@ -4,6 +4,7 @@
 
 #include "syscall.h"
 
+#include "erron.h"
 #include <stddef.h>
 #include <ctype.h>
 #include <string.h>
@@ -70,7 +71,8 @@ struct task_control_block* task_create(int priority, void *func, void *arg){
 	return &tasks[task_pid];
 }
 
-void task_kill(int pid){
+int task_kill(int pid){
+	if (!tasks[pid].inuse) return EINVAL;
 	_disable_irq();
 	list_remove(&tasks[pid].list);
 	/*	Never context switch here	*/
@@ -78,6 +80,7 @@ void task_kill(int pid){
 	--task_count;
 	_enable_irq();
 
+	return 0;
 }
 
 void task_exit(void* ptr){
