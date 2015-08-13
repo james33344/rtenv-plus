@@ -63,6 +63,14 @@ int pthread_attr_destroy(pthread_attr_t *attr);
 int pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate);
 int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate);
 
+int pthread_attr_getschedparam(const pthread_attr_t *restrict attr,
+		       struct sched_param *restrict param);
+int pthread_attr_setschedparam(pthread_attr_t *restrict attr,
+		       const struct sched_param *restrict param);
+
+int pthread_getschedparam(pthread_t thread, int *restrict policy, struct sched_param *restrict param);
+int pthread_setschedparam(pthread_t thread, int policy, const struct sched_param *param);
+
 
 #endif
 

@@ -7,7 +7,7 @@
 
 #define get_pthread_attr_priority(attr) ({ \
 	attr->sched_param.sched_priority; \
-})	
+})
 
 extern struct task_control_block* current_tcb;
 
@@ -91,4 +91,40 @@ int pthread_attr_destroy(pthread_attr_t *attr) {
 	return 0;	
 }
 
+
+/* TODO
+ * error detect
+ * Ex: EINVAL
+ */
+int pthread_attr_setschedparam(pthread_attr_t *restrict attr,
+       const struct sched_param *restrict param) {
+	attr->sched_param.policy = param->policy;
+	attr->sched_param.sched_priority = param->sched_priority;
+
+	return 0;
+}
+
+/* TODO
+ * error detect
+ * Ex: EINVAL
+ */
+int pthread_attr_getschedparam(const pthread_attr_t *restrict attr,
+		       struct sched_param *restrict param) {
+	param->policy = attr->sched_param.policy;
+	param->sched_priority = attr->sched_param.sched_priority;
+
+	return 0;
+}
+
+int pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate) {
+	*detachstate = attr->detachstate;
+
+	return 0;
+}
+
+int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate) {
+	attr->detachstate = detachstate;
+	
+	return 0;
+}
 
