@@ -4,6 +4,7 @@
 
 #include "syscall.h"
 
+#include "erron.h"
 #include <stddef.h>
 #include <ctype.h>
 #include <string.h>
@@ -19,6 +20,9 @@
 #include "event-monitor.h"
 #include "romfs.h"
 #include <stddef.h>
+#include "trace.h"
+
+char str[5] = "test";
 
 /* System resources */
 extern struct task_control_block tasks[TASK_LIMIT];
@@ -38,19 +42,20 @@ unsigned int *init_task(unsigned int *stack, void (*start)())
 	return stack;
 }
 
-static int task_search_empty(){
+static inline int task_search_empty(){
 	int i;
 	for(i=0; i<TASK_LIMIT; i++){
-		if(tasks[i].inuse == 0)
+		if(tasks[i].inuse == 0) {
 			break;
+		}
 	}
 	return i;
 }
 
-void task_create(int priority, void *func, void *arg){
+struct task_control_block* task_create(int priority, void *func, void *arg){
 	int task_pid;
 	if(task_count == TASK_LIMIT || (task_pid = task_search_empty())==TASK_LIMIT){
-		return;
+		return NULL;
 	}	
     tasks[task_pid].stack = (void*)init_task(stacks[task_pid], func);
     tasks[task_pid].pid = task_pid;
@@ -59,20 +64,27 @@ void task_create(int priority, void *func, void *arg){
     list_init(&tasks[task_pid].list);
     list_push(&ready_list[tasks[task_pid].priority], &tasks[task_pid].list);
     task_count++;
+#ifdef TRACE
+	trace_task_create(&tasks[task_pid], str, priority);	
+#endif
+
+	return &tasks[task_pid];
 }
 
-void task_kill(int pid){
+int task_kill(int pid){
+	if (!tasks[pid].inuse) return EINVAL;
 	_disable_irq();
 	list_remove(&tasks[pid].list);
 	/*	Never context switch here	*/
 	tasks[pid].inuse = 0;
-	task_count--;
+	--task_count;
 	_enable_irq();
 
-	while(1);
+	return 0;
 }
 
 void task_exit(void* ptr){
 	task_kill(current_tcb->pid);
+	while(1);
 }
 

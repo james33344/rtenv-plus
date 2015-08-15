@@ -47,12 +47,14 @@ INCLUDES = $(addprefix -I,$(INCDIR))
 
 SRCDIR_429 = src_429 \
          $(CMSIS_429_LIB)/ST/STM32F4xx/Source/Templates \
-         $(STM32_429_LIB)/src 
+         $(STM32_429_LIB)/src \
+		 $(APP_DIR)
 INCDIR_429 = include \
          $(CMSIS_429_LIB)/ST/STM32F4xx/Include \
          $(CMSIS_429_LIB)/Include \
-         $(STM32_429_LIB)/inc
-
+         $(STM32_429_LIB)/inc \
+		 $(APP_DIR)
+		 
 INCLUDES_429 = $(addprefix -I,$(INCDIR_429))
 DATDIR = data
 TOOLDIR = tool
@@ -141,7 +143,7 @@ runstm:
 runstmdbg:
 	@echo " Debuggin..."
 	@$(CROSS_COMPILE)gdb $(OUTDIR_429)/main.elf \
-		-ex 'target remote :3333' \
+		-ex 'target remote :4242' \
 		-ex 'monitor reset halt' \
 		-ex 'load' \
 		-ex 'monitor arm semihosting enable' 
