@@ -9,7 +9,24 @@
 	attr->sched_param.sched_priority; \
 })
 
+#define is_thread_not_alive(thread) ({ \
+		thread->released==0 ? 0 : 1;  \
+})
+
+#define is_thread_exit_but_not_released(thread) ({ \
+		thread->tcb->inuse==0 ? 1 : 0;  \
+})
+	
 extern struct task_control_block* current_tcb;
+
+static inline void __release_pthread(pthread_t* thread) {
+	_disable_irq();
+	(*thread)->released = 1;
+	free(*thread);
+	_enable_irq();
+
+}
+
 
 int pthread_create(pthread_t *restrict thread,
 					const pthread_attr_t *restrict attr,
@@ -30,6 +47,7 @@ int pthread_create(pthread_t *restrict thread,
 
 	*thread = (pthread_t) malloc(sizeof(pthread_t));
 	(*thread)->tcb = tcb;
+	(*thread)->released = 0;
 
 	return 0;
 }
@@ -58,6 +76,28 @@ int pthread_cancel(pthread_t thread) {
 	return EINVAL;
 }
 
+int pthread_join(pthread_t thread, void **value_ptr) {
+	if(thread->tcb == NULL) return EINVAL;
+
+	if(is_thread_not_alive(thread)) {
+		return ESRCH;
+	}
+	else if (is_thread_exit_but_not_released(thread)) {
+		__release_pthread(&thread);
+		return 0;
+	}
+
+	task_block(thread->tcb->pid);
+	
+	__release_pthread(&thread);
+
+	return 0;
+}
+
+int pthread_detach(pthread_t thread) {
+
+	return 0;
+}
 
 /*
  * The pthread_attr_init() function shall initialize a thread attributes object attr 
@@ -65,7 +105,7 @@ int pthread_cancel(pthread_t thread) {
  */ 
 int pthread_attr_init(pthread_attr_t *attr) {
 	/*TODO
-	 * thread stack should have it's own range in linking script
+	 * thread stack should have it's own range in linker script
 	 * so that we can set stack size in task_create() to desired size
 	 */ 
 	/* TODO

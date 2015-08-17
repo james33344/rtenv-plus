@@ -3,6 +3,7 @@
 
 #define STACK_SIZE 384 /* Size of task stacks in words */
 #define TASK_LIMIT 8  /* Max number of tasks we can handle */
+#define TASK_BLOCK_LIMIT (TASK_LIMIT - 1) /* Max number of tasks whick can be block from other task */
 #define PIPE_LIMIT (TASK_LIMIT * 2)
 #define PIPE_BUF   64 /* Size of largest atomic pipe message */
 #define PATH_MAX   32 /* Longest absolute path */
@@ -20,7 +21,7 @@
 #define ROMFS_FILE_LIMIT 8
 
 #define INTR_LIMIT 58 /* IRQn = [-15 ... 42] */
-#define EVENT_LIMIT (FILE_LIMIT * 2 + INTR_LIMIT + 1)
+#define EVENT_LIMIT (FILE_LIMIT * 2 + INTR_LIMIT + TASK_BLOCK_LIMIT + 1)
     /* Read and write event for each file, intr events and time event */
 
 #define PRIORITY_DEFAULT 20

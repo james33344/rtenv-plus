@@ -9,6 +9,7 @@
 #define TASK_WAIT_WRITE 2
 #define TASK_WAIT_INTR  3
 #define TASK_WAIT_TIME  4
+#define TASK_WAIT_TASK  5
 
 /* Stack struct of user thread, see "Exception entry and return" */
 struct user_thread_stack {
@@ -48,5 +49,6 @@ unsigned int *init_task(unsigned int *stack, void (*start)());
 struct task_control_block* task_create(int priority, void *func, void *arg);
 int task_kill(int pid);
 void task_exit(void* ptr);
+void task_block(int pid);
 
 #endif

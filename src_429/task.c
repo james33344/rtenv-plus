@@ -30,6 +30,7 @@ extern unsigned int stacks[TASK_LIMIT][STACK_SIZE];
 extern struct list ready_list[PRIORITY_LIMIT + 1];  /* [0 ... 39] */
 extern size_t task_count;
 extern struct task_control_block *current_tcb;
+extern struct event_monitor event_monitor;
 
 int prv_priority = PRIORITY_DEFAULT;
 
@@ -52,6 +53,10 @@ static inline int task_search_empty(){
 	return i;
 }
 
+/*	
+ * TODO
+ * Arguments passed to thread, pthread_create need too
+ */
 struct task_control_block* task_create(int priority, void *func, void *arg){
 	int task_pid;
 	if(task_count == TASK_LIMIT || (task_pid = task_search_empty())==TASK_LIMIT){
@@ -78,6 +83,7 @@ int task_kill(int pid){
 	/*	Never context switch here	*/
 	tasks[pid].inuse = 0;
 	--task_count;
+	event_monitor_release(&event_monitor, TASK_EVENT(pid));
 	_enable_irq();
 
 	return 0;
@@ -88,3 +94,11 @@ void task_exit(void* ptr){
 	while(1);
 }
 
+void task_block(int pid) {
+    event_monitor_block(&event_monitor,
+                        TASK_EVENT(pid),
+						current_tcb);
+    current_tcb->status = TASK_WAIT_TASK;
+	current_tcb->stack->r7 = 0xFFFF;
+	__asm("svc 0");
+}

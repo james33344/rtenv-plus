@@ -18,12 +18,6 @@
 
 //typedef unsigned long int pthread_t;
 
-struct pthread_struct {
-	struct task_control_block* tcb;
-
-};
-
-typedef struct pthread_struct* pthread_t;
 
 struct sched_param {
 	int policy;
@@ -38,6 +32,13 @@ typedef struct pthread_attr_struct {
 } pthread_attr_t;
 
 
+struct pthread_struct {
+	struct task_control_block* tcb;
+	pthread_attr_t* attr;
+	int released;
+};
+
+typedef struct pthread_struct* pthread_t;
 //------------------------check to here--------------------
 
 typedef struct pthread_internal_slist {

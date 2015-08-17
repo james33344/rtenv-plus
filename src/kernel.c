@@ -73,6 +73,13 @@ int time_release(struct event_monitor *monitor, int event,
     return task->stack->r0 == *tick_count;
 }
 
+int task_release(struct event_monitor *monitor, int event,
+                 struct task_control_block *task, void *data)
+{
+	int* pid = data;
+	return tasks[*pid].inuse == 0;
+}
+
 /*	user app entry	*/
 void kernel_thread() {
 	main();
@@ -126,6 +133,12 @@ int __rtenv_start()
     /* Register IRQ events, see INTR_LIMIT */
 	for (i = -15; i < INTR_LIMIT - 15; i++)
 	    event_monitor_register(&event_monitor, INTR_EVENT(i), intr_release, 0);
+
+    /* Register TASK blocked event -> pthread_join, atomic etc. */
+	for (i = 0; i < TASK_LIMIT; i++) {
+	    int pid = i;
+		event_monitor_register(&event_monitor, TASK_EVENT(i), task_release, &pid);
+	}
 
 	event_monitor_register(&event_monitor, TIME_EVENT, time_release, &tick_count);
     /* Initialize all task threads */

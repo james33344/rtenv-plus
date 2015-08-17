@@ -71,6 +71,8 @@ int pthread_attr_setschedparam(pthread_attr_t *restrict attr,
 int pthread_getschedparam(pthread_t thread, int *restrict policy, struct sched_param *restrict param);
 int pthread_setschedparam(pthread_t thread, int policy, const struct sched_param *param);
 
+int pthread_join(pthread_t thread, void **value_ptr);
+int pthread_detach(pthread_t thread);
 
 #endif
 
