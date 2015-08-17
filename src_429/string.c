@@ -53,9 +53,9 @@ size_t strlen(const char *s)
 void puts(char *s)
 {
 	while (*s) {
-		while (USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET)
+		while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET)
 			/* wait */ ;
-		USART_SendData(USART2, *s);
+		USART_SendData(USART1, *s);
 		s++;
 	}
 }
