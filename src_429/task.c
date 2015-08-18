@@ -76,6 +76,14 @@ struct task_control_block* task_create(int priority, void *func, void *arg){
 	return &tasks[task_pid];
 }
 
+
+/*
+ * FIXME
+ * Is it better to put task_kill and task_block
+ * in the kernel level(call by syscall)?
+ * (because its uses kernel level API(monitor))
+ */
+
 int task_kill(int pid){
 	if (!tasks[pid].inuse) return EINVAL;
 	_disable_irq();

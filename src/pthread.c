@@ -5,19 +5,31 @@
 #include "syscall.h"
 #include "malloc.h"
 
+/*	index = pid, value = address to pthread_t	*/
+static pthread_t* __pthread_record[TASK_LIMIT];
+extern struct task_control_block* current_tcb;
+
 #define get_pthread_attr_priority(attr) ({ \
 	attr->sched_param.sched_priority; \
 })
 
 #define is_thread_not_alive(thread) ({ \
-		thread->released==0 ? 0 : 1;  \
+	thread->released==0 ? 0 : 1;  \
 })
 
 #define is_thread_exit_but_not_released(thread) ({ \
-		thread->tcb->inuse==0 ? 1 : 0;  \
+	thread->tcb->inuse==0 ? 1 : 0;  \
 })
-	
-extern struct task_control_block* current_tcb;
+
+static inline int is_attr_joinable(pthread_t* thread) {
+	if((*thread)->attr && (*thread)->attr->detachstate == PTHREAD_CREATE_DETACHED) return 0;
+	return 1;
+}
+
+static inline int is_thread_value_legal(pthread_t* thread) {
+	if((*thread)->tcb == NULL) return 0;
+	return 1;
+}
 
 static inline void __release_pthread(pthread_t* thread) {
 	_disable_irq();
@@ -27,12 +39,10 @@ static inline void __release_pthread(pthread_t* thread) {
 
 }
 
-
 int pthread_create(pthread_t *restrict thread,
 					const pthread_attr_t *restrict attr,
 			        void *(*start_routine)(void*), 
 					void *restrict arg) {
-
 
 	struct task_control_block* tcb;
 	if (!attr) {
@@ -45,20 +55,24 @@ int pthread_create(pthread_t *restrict thread,
 
 	if (tcb == NULL) return EAGAIN;
 
+
 	*thread = (pthread_t) malloc(sizeof(pthread_t));
 	(*thread)->tcb = tcb;
 	(*thread)->released = 0;
+
+	__pthread_record[tcb->pid] = thread; 
 
 	return 0;
 }
 
 pthread_t pthread_self() {
-	pthread_t retval = (pthread_t) malloc(sizeof(pthread_t));
-	retval->tcb = current_tcb;
-	return retval;
+	return *__pthread_record[current_tcb->pid];
 }
 
 int inline pthread_equal(pthread_t t1, pthread_t t2) {
+	/* FIXME
+	 * use better comparision
+	 */
 	if(t1->tcb == t2->tcb) {
 		/*	success	*/
 		return 1;
@@ -76,8 +90,15 @@ int pthread_cancel(pthread_t thread) {
 	return EINVAL;
 }
 
+/* TODO
+ * implement value_ptr
+ */
 int pthread_join(pthread_t thread, void **value_ptr) {
-	if(thread->tcb == NULL) return EINVAL;
+
+	if(!is_thread_value_legal(&thread)) return EINVAL;
+
+	if(!is_attr_joinable(&thread)) return EINVAL;
+
 
 	if(is_thread_not_alive(thread)) {
 		return ESRCH;
@@ -95,7 +116,8 @@ int pthread_join(pthread_t thread, void **value_ptr) {
 }
 
 int pthread_detach(pthread_t thread) {
-
+	if(!is_attr_joinable(&thread)) return EINVAL;
+	__release_pthread(&thread);	
 	return 0;
 }
 
