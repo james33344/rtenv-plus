@@ -81,7 +81,17 @@ int inline pthread_equal(pthread_t t1, pthread_t t2) {
 }
 
 void inline pthread_exit(void *value_ptr) {
-	task_exit(NULL);
+	if(value_ptr != NULL) {
+		/* pthread_exit first */
+		if(pthread_self()->value_ptr==NULL) {
+			pthread_self()->value_ptr = value_ptr;
+		}
+		/* pthread_join first */
+		else {
+			*(pthread_self()->value_ptr) = value_ptr;
+		}
+	}
+	task_exit(value_ptr);
 }
 
 int pthread_cancel(pthread_t thread) {
@@ -90,9 +100,6 @@ int pthread_cancel(pthread_t thread) {
 	return EINVAL;
 }
 
-/* TODO
- * implement value_ptr
- */
 int pthread_join(pthread_t thread, void **value_ptr) {
 
 	if(!is_thread_value_legal(&thread)) return EINVAL;
@@ -104,9 +111,14 @@ int pthread_join(pthread_t thread, void **value_ptr) {
 		return ESRCH;
 	}
 	else if (is_thread_exit_but_not_released(thread)) {
+		if(value_ptr!=NULL)
+			*value_ptr = thread->value_ptr;
 		__release_pthread(&thread);
 		return 0;
 	}
+
+	if(value_ptr!=NULL)
+		thread->value_ptr = value_ptr;
 
 	task_block(thread->tcb->pid);
 	
@@ -128,7 +140,7 @@ int pthread_detach(pthread_t thread) {
 int pthread_attr_init(pthread_attr_t *attr) {
 	/*TODO
 	 * thread stack should have it's own range in linker script
-	 * so that we can set stack size in task_create() to desired size
+	 * so that we can set stack size in task_creat`() to desired size
 	 */ 
 	/* TODO
 	 * Add error return

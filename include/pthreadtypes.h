@@ -36,6 +36,7 @@ struct pthread_struct {
 	struct task_control_block* tcb;
 	pthread_attr_t* attr;
 	int released;
+	void** value_ptr;
 };
 
 typedef struct pthread_struct* pthread_t;

@@ -22,8 +22,6 @@
 #include <stddef.h>
 #include "trace.h"
 
-char str[5] = "test";
-
 /* System resources */
 extern struct task_control_block tasks[TASK_LIMIT];
 extern unsigned int stacks[TASK_LIMIT][STACK_SIZE];
@@ -102,11 +100,3 @@ void task_exit(void* ptr){
 	while(1);
 }
 
-void task_block(int pid) {
-    event_monitor_block(&event_monitor,
-                        TASK_EVENT(pid),
-						current_tcb);
-    current_tcb->status = TASK_WAIT_TASK;
-	current_tcb->stack->r7 = 0xFFFF;
-	__asm("svc 0");
-}
