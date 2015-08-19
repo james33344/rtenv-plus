@@ -8,9 +8,7 @@
 	#include "stm32_p103.h"
 #endif
 #include "RTOSConfig.h"
-
 #include "syscall.h"
-
 #include <stddef.h>
 #include <ctype.h>
 #include <string.h>
@@ -28,17 +26,17 @@
 #include "trace.h"
 #include "host.h"
 
-int main() __attribute__((weak));
-
 extern int task_start();
 extern int logfile;
 unsigned int prev_tick = 0;
 unsigned int prev_task;
 
-/*Global Variables*/
+int main() __attribute__((weak));
+
 unsigned int tick_count = 0;
 int timeup = 0;
 
+void write_blank(int blank_num);
 size_t current_task = 0;
 size_t task_count = 0;
 
@@ -48,14 +46,14 @@ void idle(){
 	char *string = "idle\n\r";
 		while (*string) {
 			char c = *string;
-			if (USART_GetFlagStatus((USART_TypeDef *)USART1, USART_FLAG_TXE) == SET) {
-				USART_SendData((USART_TypeDef *)USART1, c);
+			if (USART_GetFlagStatus((USART_TypeDef *)USART2, USART_FLAG_TXE) == SET) {
+				USART_SendData((USART_TypeDef *)USART2, c);
 				string++;
 			}
 		}
-
 	while(1);	
 }
+
 
 void mount_task(){
 	mount("/dev/rom0", "/", ROMFS_TYPE, 0);
@@ -89,6 +87,7 @@ void kernel_thread() {
 	while(1);
 }
 
+
 /*	
  *	main
  */
@@ -108,10 +107,11 @@ struct list *list;
 int __rtenv_start()
 {
 	int i;
-	init_rs232();
 #ifdef TRACE	
-	logfile = host_action(SYS_OPEN, "log", 4);
+	logfile = host_action(SYS_OPEN, "logqemu", 4);
 #endif
+	init_rs232();
+
     /* Initialize memory pool */
     memory_pool_init(&memory_pool, MEM_LIMIT, memory_space);
 
@@ -316,11 +316,18 @@ void syscall_handler(){
                 current_tcb->stack->r0 = -1;
             }
         } break;
+	case 0xb: /* task_block */
+		{
+			event_monitor_block(&event_monitor,
+						        TASK_EVENT(current_tcb->stack->r0),
+								current_tcb);
+			current_tcb->status = TASK_WAIT_TASK;
+		}
+		break;
 	default:
 		break;
 	}
 }
-
 
 void c_usart1_handler(){
     NVIC_DisableIRQ(USART1_IRQn);
@@ -355,7 +362,6 @@ void context_switch(){
 
 }
 
-
 void __attribute__((naked)) set_pendsv(){
 	__asm volatile(
 		"ldr r4, =0xe000ed04	\n"
@@ -379,7 +385,7 @@ void trace_pendsv_switch_now(){
 #endif
 }
 
-int main () {
+int main() {
 	puts("No application to run, check app/ \n\r");
 	return 0;
 }

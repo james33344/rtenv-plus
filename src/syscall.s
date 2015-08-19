@@ -82,3 +82,11 @@ lseek:
 	nop
 	pop {r7,lr}
 	bx lr
+.global task_block
+task_block:
+	push {r7,lr}
+	mov r7, #0xb
+	svc 0
+	nop
+	pop {r7,lr}
+	bx lr

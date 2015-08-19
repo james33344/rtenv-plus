@@ -316,6 +316,14 @@ void syscall_handler(){
                 current_tcb->stack->r0 = -1;
             }
         } break;
+	case 0xb: /* task_block */
+		{
+			event_monitor_block(&event_monitor,
+						        TASK_EVENT(current_tcb->stack->r0),
+								current_tcb);
+			current_tcb->status = TASK_WAIT_TASK;
+		}
+		break;
 	default:
 		break;
 	}
