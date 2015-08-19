@@ -54,7 +54,6 @@ void idle(){
 	while(1);	
 }
 
-
 void mount_task(){
 	mount("/dev/rom0", "/", ROMFS_TYPE, 0);
 	task_exit(NULL);
