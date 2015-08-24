@@ -89,9 +89,9 @@ void serialout(void* arg)
 			read(fd, &c, 1);
 		doread = 0;
 //		if (USART_GetFlagStatus(uart, USART_FLAG_TXE) == SET) {
-		if (USART_GetFlagStatus((USART_TypeDef *)USART2, USART_FLAG_TXE) == SET) {
+		if (USART_GetFlagStatus((USART_TypeDef *)USART1, USART_FLAG_TXE) == SET) {
 //			USART_SendData(uart, c);
-			USART_SendData((USART_TypeDef *)USART2, c);
+			USART_SendData((USART_TypeDef *)USART1, c);
 			doread = 1;
 		}
 	}
@@ -104,17 +104,17 @@ void serialin(void* arg)
 	mkfifo("/dev/tty0/in", 0);
 	fd = open("/dev/tty0/in", 0);
 
-    USART_ITConfig(USART2, USART_IT_RXNE, ENABLE);
+    USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
 
 	while (1) {
 //		interrupt_wait(intr);
-		interrupt_wait(USART2_IRQn);
+		interrupt_wait(USART1_IRQn);
 		
 /*		if (USART_GetFlagStatus(uart, USART_FLAG_RXNE) == SET) {
 			c = USART_ReceiveData(uart);
 */	
-		if (USART_GetFlagStatus((USART_TypeDef *)USART2, USART_FLAG_RXNE) == SET) {
-			c = USART_ReceiveData((USART_TypeDef *)USART2);
+		if (USART_GetFlagStatus((USART_TypeDef *)USART1, USART_FLAG_RXNE) == SET) {
+			c = USART_ReceiveData((USART_TypeDef *)USART1);
 			write(fd, &c, 1);
 		}
 	}
