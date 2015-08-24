@@ -49,7 +49,7 @@ int pthread_create(pthread_t *restrict thread,
 		tcb = task_create(PRIORITY_DEFAULT, start_routine, NULL);
 	}
 	else {
-		if (attr->policy != ATTR_STATE_LEGAL) return EINVAL;
+		if (attr->policy != STATE_LEGAL) return EINVAL;
 		tcb = task_create(get_pthread_attr_priority(attr), start_routine, NULL);
 	}
 
@@ -149,7 +149,7 @@ int pthread_attr_init(pthread_attr_t *attr) {
 	attr->stack_size = 0;	
 	attr->detachstate = PTHREAD_CREATE_JOINABLE;
 	attr->sched_param.sched_priority = PRIORITY_DEFAULT;
-	attr->policy = ATTR_STATE_LEGAL;
+	attr->policy = STATE_LEGAL;
 
 	return 0;
 }
@@ -161,7 +161,7 @@ int pthread_attr_init(pthread_attr_t *attr) {
  */
 int pthread_attr_destroy(pthread_attr_t *attr) {
 	
-	attr->policy = ATTR_STATE_ILEGAL;
+	attr->policy = STATE_ILEGAL;
 	return 0;	
 }
 

@@ -25,6 +25,7 @@
 
 #include "mqueue.h"
 #include "syscall.h"
+#include "signal.h"
 
 #include "path.h"
 #include "fifo.h"

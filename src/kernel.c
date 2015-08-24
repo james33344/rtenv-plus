@@ -13,6 +13,7 @@
 #include <ctype.h>
 #include <string.h>
 #include "string.h"
+#include "pthread.h"
 #include "task.h"
 #include "memory-pool.h"
 #include "path.h"
@@ -26,7 +27,6 @@
 #include "romfs.h"
 #include "trace.h"
 #include "host.h"
-#include "shell.h"
 
 extern int task_start();
 extern int logfile;
@@ -44,23 +44,69 @@ size_t task_count = 0;
 
 struct task_control_block tasks[TASK_LIMIT];
 
-void idle(){
-	char *string = "idle\n\r";
-		while (*string) {
-			char c = *string;
-			if (USART_GetFlagStatus((USART_TypeDef *)USART2, USART_FLAG_TXE) == SET) {
-				USART_SendData((USART_TypeDef *)USART2, c);
-				string++;
-			}
-		}
-	while(1);	
+struct sigaction sig[SIGNUM];
+
+void signal_default(int arg) {
+	/*	do nothing	*/
 }
 
-void signal_server() {
-//	unsigned int replyfd = getpid() + 3;
-	
-//	read(replyfd,buf,4);
 
+/* TODO
+ * Error detext
+ */
+void signal_server() {
+
+	int signum = 0;
+    int mode = 0;
+	int replyfd = -1;
+	unsigned int func_addr = 0;
+
+	while(1) {
+
+		read(SIGSERVER_FD, &mode, sizeof(int));
+		read(SIGSERVER_FD, &replyfd, sizeof(int));
+		switch(mode) {
+			case SIGSET:
+			{
+				int status = 0;
+				read(SIGSERVER_FD, &signum, sizeof(int));
+				read(SIGSERVER_FD, &func_addr, sizeof(void(*)(int)));
+				sig[signum].sa_u.sa_handler = (void(*)(int)) func_addr;
+				sig[signum].sa_flags = STATE_LEGAL;
+
+				write(replyfd, &status, sizeof(int));
+			}
+			break;
+			case SIGRAISE:
+			{
+				read(SIGSERVER_FD, &signum, sizeof(int));
+				if (sig[signum].sa_flags == STATE_LEGAL) {
+					func_addr = (unsigned int) sig[signum].sa_u.sa_handler;	
+				}
+				else {
+					func_addr = (unsigned int) SIG_ERR;	
+				}
+				write(replyfd, &func_addr, sizeof(void(*)(int)));
+					
+			}
+			break;
+			case SIGDFL: 
+			{
+				read(SIGSERVER_FD, &signum, sizeof(int));
+				if (sig[signum].sa_flags == STATE_LEGAL) {
+					func_addr = (unsigned int) sig[signum].sa_u.sa_handler;	
+					sig[signum].sa_u.sa_handler = signal_default;
+				}
+				else {
+					func_addr = (unsigned int) SIG_ERR;	
+				}
+				write(replyfd, &func_addr, sizeof(void(*)(int)));
+
+			}
+			break;
+		}
+		
+	}
 }
 
 void mount_task(){
@@ -91,10 +137,8 @@ int task_release(struct event_monitor *monitor, int event,
 /*	user app entry	*/
 void kernel_thread() {
 	main();
-	task_exit(NULL);
 	while(1);
 }
-
 
 /*	
  *	main
@@ -151,6 +195,7 @@ int __rtenv_start()
 	event_monitor_register(&event_monitor, TIME_EVENT, time_release, &tick_count);
     /* Initialize all task threads */
 	task_create(0, pathserver, NULL);
+	task_create(0, signal_server, NULL);
 	task_create(0, romdev_driver, NULL);
 	task_create(0, romfs_server, NULL);
 	task_create(0, mount_task, NULL);
