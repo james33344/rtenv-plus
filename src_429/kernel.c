@@ -31,7 +31,7 @@ extern int logfile;
 unsigned int prev_tick = 0;
 unsigned int prev_task;
 
-int main() __attribute__((weak));
+extern int main();
 
 unsigned int tick_count = 0;
 int timeup = 0;
@@ -382,10 +382,5 @@ void trace_pendsv_switch_now(){
 #ifdef TRACE
 	trace_task_switch((void *)prev_task, prev_tick, current_tcb);
 #endif
-}
-
-int main() {
-	puts("No application to run, check app/ \n\r");
-	return 0;
 }
 

@@ -1,5 +1,4 @@
 
 
-APP_DIR += app/RS232
-
+#APP_DIR += app/posixtestsuit
 

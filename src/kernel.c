@@ -19,19 +19,21 @@
 #include "pipe.h"
 #include "fifo.h"
 #include "mqueue.h"
+#include "signal.h"
 #include "block.h"
 #include "romdev.h"
 #include "event-monitor.h"
 #include "romfs.h"
 #include "trace.h"
 #include "host.h"
+#include "shell.h"
 
 extern int task_start();
 extern int logfile;
 unsigned int prev_tick = 0;
 unsigned int prev_task;
 
-int main() __attribute__((weak));
+extern int main();
 
 unsigned int tick_count = 0;
 int timeup = 0;
@@ -54,6 +56,12 @@ void idle(){
 	while(1);	
 }
 
+void signal_server() {
+//	unsigned int replyfd = getpid() + 3;
+	
+//	read(replyfd,buf,4);
+
+}
 
 void mount_task(){
 	mount("/dev/rom0", "/", ROMFS_TYPE, 0);
@@ -383,10 +391,5 @@ void trace_pendsv_switch_now(){
 #ifdef TRACE
 	trace_task_switch((void *)prev_task, prev_tick, current_tcb);
 #endif
-}
-
-int main() {
-	puts("No application to run, check app/ \n\r");
-	return 0;
 }
 
