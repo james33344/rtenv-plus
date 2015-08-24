@@ -18,6 +18,8 @@ struct mount {
  *
  * The first TASK_LIMIT FDs are reserved for use by their respective tasks.
  * 0-2 are reserved FDs and are skipped.
+ * Because all FDs are plus 3 due to reserved FDs, so we make PATHSERVER_FD
+ * be the beginning FD of other files manipulation.
  * The server registers itself at /sys/pathserver
  */
 void pathserver()
@@ -50,7 +52,7 @@ void pathserver()
 		        read(PATHSERVER_FD, &plen, 4);
 		        read(PATHSERVER_FD, path, plen);
 			    read(PATHSERVER_FD, &dev, 4);
-			    newfd = npaths + 3 + TASK_LIMIT;
+			    newfd = npaths + PATHSERVER_FD;
 			    if (mknod(newfd, 0, dev) == 0) {
 			        memcpy(paths[npaths], path, plen);
 			        npaths++;
@@ -67,8 +69,7 @@ void pathserver()
 		        /* Search for path */
 			    for (i = 0; i < npaths; i++) {
 				    if (*paths[i] && strcmp(path, paths[i]) == 0) {
-					    i += 3; /* 0-2 are reserved */
-					    i += TASK_LIMIT; /* FDs reserved for tasks */
+						i += PATHSERVER_FD;
 					    write(replyfd, &i, 4);
 					    i = 0;
 					    break;
@@ -106,7 +107,7 @@ void pathserver()
 		    case PATH_CMD_REGISTER_PATH:
 		        read(PATHSERVER_FD, &plen, 4);
 		        read(PATHSERVER_FD, path, plen);
-			    newfd = npaths + 3 + TASK_LIMIT;
+			    newfd = npaths + PATHSERVER_FD;
 			    memcpy(paths[npaths], path, plen);
 		        npaths++;
 				write(replyfd, &newfd, 4);
@@ -165,7 +166,7 @@ void pathserver()
 			    }
 
                 /* Store mount point */
-                mounts[nmounts].dev = i + 3 + TASK_LIMIT;
+                mounts[nmounts].dev = i + PATHSERVER_FD;
 			    memcpy(mounts[nmounts].path, dst, dlen);
 			    nmounts++;
 
