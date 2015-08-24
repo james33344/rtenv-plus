@@ -9,8 +9,6 @@
 #define MAX_ENVNAME 15
 #define MAX_ENVVALUE 63
 
-int __attribute__((weak)) main();
-
 extern struct task_control_block tasks[TASK_LIMIT];
 void itoa(int n, char *dst, int base);
 
@@ -91,9 +89,9 @@ void serialout(void* arg)
 			read(fd, &c, 1);
 		doread = 0;
 //		if (USART_GetFlagStatus(uart, USART_FLAG_TXE) == SET) {
-		if (USART_GetFlagStatus((USART_TypeDef *)USART1, USART_FLAG_TXE) == SET) {
+		if (USART_GetFlagStatus((USART_TypeDef *)USART2, USART_FLAG_TXE) == SET) {
 //			USART_SendData(uart, c);
-			USART_SendData((USART_TypeDef *)USART1, c);
+			USART_SendData((USART_TypeDef *)USART2, c);
 			doread = 1;
 		}
 	}
@@ -106,17 +104,17 @@ void serialin(void* arg)
 	mkfifo("/dev/tty0/in", 0);
 	fd = open("/dev/tty0/in", 0);
 
-    USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
+    USART_ITConfig(USART2, USART_IT_RXNE, ENABLE);
 
 	while (1) {
 //		interrupt_wait(intr);
-		interrupt_wait(USART1_IRQn);
+		interrupt_wait(USART2_IRQn);
 		
 /*		if (USART_GetFlagStatus(uart, USART_FLAG_RXNE) == SET) {
 			c = USART_ReceiveData(uart);
 */	
-		if (USART_GetFlagStatus((USART_TypeDef *)USART1, USART_FLAG_RXNE) == SET) {
-			c = USART_ReceiveData((USART_TypeDef *)USART1);
+		if (USART_GetFlagStatus((USART_TypeDef *)USART2, USART_FLAG_RXNE) == SET) {
+			c = USART_ReceiveData((USART_TypeDef *)USART2);
 			write(fd, &c, 1);
 		}
 	}
@@ -712,11 +710,10 @@ void itoa(int n, char *dst, int base)
 	strcpy(dst, p);
 }
 
-int main() {
+int __attribute__((weak)) main() {
 
 	pthread_t serialout_t, serialin_t, rs232_xmit_msg_task_t, serial_test_task_t;
 	pthread_attr_t a, b, c, d;
-	pthread_t self_t;
 
 	pthread_attr_init(&a);
 	pthread_attr_init(&b);
@@ -731,12 +728,6 @@ int main() {
 	pthread_create(&serialin_t, &b, (void*)serialin, NULL);
 	pthread_create(&rs232_xmit_msg_task_t, &c, (void*)rs232_xmit_msg_task, NULL);
 	pthread_create(&serial_test_task_t, &d, (void*)serial_test_task, NULL);
-
-	self_t = pthread_self();
-
-	if (pthread_equal(self_t, serialout_t)!=0) {
-		show_cmd_info(0,NULL);
-	}
 
 	return 0;
 }

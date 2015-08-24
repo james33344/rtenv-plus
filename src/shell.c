@@ -9,8 +9,6 @@
 #define MAX_ENVNAME 15
 #define MAX_ENVVALUE 63
 
-int main() __attribute__((weak));
-
 extern struct task_control_block tasks[TASK_LIMIT];
 void itoa(int n, char *dst, int base);
 
@@ -712,11 +710,10 @@ void itoa(int n, char *dst, int base)
 	strcpy(dst, p);
 }
 
-int main() {
+int __attribute__((weak)) main() {
 
 	pthread_t serialout_t, serialin_t, rs232_xmit_msg_task_t, serial_test_task_t;
 	pthread_attr_t a, b, c, d;
-	pthread_t self_t;
 
 	pthread_attr_init(&a);
 	pthread_attr_init(&b);
@@ -731,12 +728,6 @@ int main() {
 	pthread_create(&serialin_t, &b, (void*)serialin, NULL);
 	pthread_create(&rs232_xmit_msg_task_t, &c, (void*)rs232_xmit_msg_task, NULL);
 	pthread_create(&serial_test_task_t, &d, (void*)serial_test_task, NULL);
-
-	self_t = pthread_self();
-
-	if (pthread_equal(self_t, serialout_t)!=0) {
-		show_cmd_info(0,NULL);
-	}
 
 	return 0;
 }
