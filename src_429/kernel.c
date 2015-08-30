@@ -52,7 +52,7 @@ void signal_default(int arg) {
 
 
 /* TODO
- * Error detext
+ * Error detect
  */
 void signal_server() {
 
@@ -102,6 +102,20 @@ void signal_server() {
 				}
 				write(replyfd, &func_addr, sizeof(void(*)(int)));
 
+			}
+			break;
+			case SIGIGN:
+			{
+				read(SIGSERVER_FD, &signum, sizeof(int));
+				if (sig[signum].sa_flags == STATE_LEGAL) {
+					func_addr = (unsigned int) sig[signum].sa_u.sa_handler;	
+					sig[signum].sa_u.sa_handler = signal_default;
+					sig[signum].sa_flags = STATE_ILEGAL;
+				}
+				else {
+					func_addr = (unsigned int) SIG_ERR;	
+				}
+				write(replyfd, &func_addr, sizeof(void(*)(int)));
 			}
 			break;
 		}

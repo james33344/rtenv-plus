@@ -12,6 +12,7 @@ typedef int sigset_t;
 #define SIGSET 0
 #define SIGDFL 1
 #define SIGRAISE 2
+#define SIGIGN 3
 
 #define SIG_DFL ((void(*)(int))1)
 #define SIG_ERR ((void(*)(int))2)
