@@ -34,6 +34,7 @@ static inline int is_thread_value_legal(pthread_t* thread) {
 static inline void __release_pthread(pthread_t* thread) {
 	_disable_irq();
 	(*thread)->released = 1;
+	(*thread)->tcb->inuse = 0;
 	free(*thread);
 	_enable_irq();
 
@@ -102,6 +103,8 @@ int pthread_cancel(pthread_t thread) {
 
 int pthread_join(pthread_t thread, void **value_ptr) {
 
+	if(thread == NULL) return ESRCH;
+
 	if(!is_thread_value_legal(&thread)) return EINVAL;
 
 	if(!is_attr_joinable(&thread)) return EINVAL;
@@ -128,7 +131,9 @@ int pthread_join(pthread_t thread, void **value_ptr) {
 }
 
 int pthread_detach(pthread_t thread) {
+	if(thread == NULL) return ESRCH;
 	if(!is_attr_joinable(&thread)) return EINVAL;
+	task_kill(thread->tcb->pid);
 	__release_pthread(&thread);	
 	return 0;
 }

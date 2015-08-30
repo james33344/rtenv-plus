@@ -40,7 +40,7 @@ struct task_control_block {
     int pid;
     int status;
     int priority;
-	int inuse;
+		int inuse;
 
     struct list list;
 };
