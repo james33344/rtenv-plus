@@ -2,7 +2,7 @@
 #define KCONFIG_H
 
 #define STACK_SIZE 384 /* Size of task stacks in words */
-#define TASK_LIMIT 10  /* Max number of tasks we can handle */
+#define TASK_LIMIT 24  /* Max number of tasks we can handle */
 #define TASK_BLOCK_LIMIT (TASK_LIMIT - 1) /* Max number of tasks whick can be block from other task */
 #define PIPE_LIMIT (TASK_LIMIT * 2)
 #define PIPE_BUF   64 /* Size of largest atomic pipe message */
@@ -11,7 +11,7 @@
 	/* File descriptor of pipe to pathserver */
 #define FREG_LIMIT 16 /* Other types file limit */
 #define FILE_LIMIT (PIPE_LIMIT + FREG_LIMIT)
-#define MEM_LIMIT (2048)
+#define MEM_LIMIT (4096)
 #define BLOCK_BUF 64
 #define REGFILE_BUF 64
 #define FS_LIMIT 8
