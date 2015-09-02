@@ -207,3 +207,54 @@ int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate) {
 	return 0;
 }
 
+int pthread_mutex_init(pthread_mutex_t *restrict mutex,
+		       const pthread_mutexattr_t *restrict attr) {
+	if(attr == NULL) {
+		mutex->data.lock = 0;
+		mutex->data.count = 0;
+		mutex->data.state = STATE_LEGAL;
+	}
+
+	return 0;
+}
+
+int pthread_mutex_destroy(pthread_mutex_t *mutex) {
+	mutex->data.state = STATE_ILEGAL;
+
+	return 0;
+}
+
+int pthread_mutexattr_init(pthread_mutexattr_t *attr) {
+	return 0;
+}
+
+int pthread_mutexattr_destroy(pthread_mutexattr_t *attr) {
+	return 0;
+}
+
+int pthread_mutex_lock(pthread_mutex_t *mutex) {
+	_disable_irq();
+
+	if((*mutex).data.lock == 1) {
+		mutex_lock(&(*mutex));
+		(*mutex).data.count++;
+		current_tcb->stack->r7 = 999;
+		__asm("svc 0");
+	}
+	(*mutex).data.lock = 1;
+
+	_enable_irq();
+	return 0;
+}
+
+int pthread_mutex_unlock(pthread_mutex_t *mutex) {
+
+	_disable_irq();
+	if((*mutex).data.count != 0)
+		(*mutex).data.count--;
+	(*mutex).data.lock = 0;
+	mutex_unlock(&(*mutex));
+	_enable_irq();
+	return 0;
+}
+

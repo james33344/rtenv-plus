@@ -17,6 +17,7 @@
 #define FS_LIMIT 8
 #define FS_TYPE_MAX 8
 #define MOUNT_LIMIT 4
+#define MUTEX_LIMIT 8
 
 /*	PATHSERVER_FD + 1 to FILE_LIMIT is control by pathserver() 
  *	If we want to add new system FD:

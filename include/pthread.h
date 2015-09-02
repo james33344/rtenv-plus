@@ -6,6 +6,11 @@
 #define STATE_ILEGAL 0
 #define STATE_LEGAL 1
 
+#define PTHREAD_MUTEX_INITIALIZER {\
+		.data.lock = 0, \
+		.data.count = 0, \
+		.data.state = STATE_LEGAL \
+}
 
 enum
 {
@@ -13,6 +18,14 @@ enum
   PTHREAD_CREATE_DETACHED
 };
 
+
+enum
+{
+	PTHREAD_MUTEX_DEFAULT,
+	PTHREAD_MUTEX_ERRORCHECK,
+	PTHREAD_MUTEX_NORMAL,
+	PTHREAD_MUTEX_RECURSIVE
+};
 
 /* Mutex types.  */
 enum
@@ -24,8 +37,6 @@ enum
 };
 
 
-#ifdef __USE_XOPEN2K
-/* Robust mutex or not flags.  */
 enum
 {
   PTHREAD_MUTEX_STALLED,
@@ -33,10 +44,7 @@ enum
   PTHREAD_MUTEX_ROBUST,
   PTHREAD_MUTEX_ROBUST_NP = PTHREAD_MUTEX_ROBUST
 };
-#endif
 
-
-#if defined __USE_POSIX199506 || defined __USE_UNIX98
 /* Mutex protocols.  */
 enum
 {
@@ -44,8 +52,6 @@ enum
   PTHREAD_PRIO_INHERIT,
   PTHREAD_PRIO_PROTECT
 };
-#endif
-
 
 int pthread_create(pthread_t *restrict thread,
 					const pthread_attr_t *restrict attr,
@@ -73,6 +79,19 @@ int pthread_setschedparam(pthread_t thread, int policy, const struct sched_param
 
 int pthread_join(pthread_t thread, void **value_ptr);
 int pthread_detach(pthread_t thread);
+
+int pthread_mutexattr_destroy(pthread_mutexattr_t *attr);
+int pthread_mutexattr_init(pthread_mutexattr_t *attr);
+
+
+int pthread_mutex_destroy(pthread_mutex_t *mutex);
+int pthread_mutex_init(pthread_mutex_t *restrict mutex,
+		       const pthread_mutexattr_t *restrict attr);
+
+int pthread_mutex_lock(pthread_mutex_t *mutex);
+int pthread_mutex_trylock(pthread_mutex_t *mutex);
+int pthread_mutex_unlock(pthread_mutex_t *mutex);
+
 
 #endif
 

@@ -90,3 +90,19 @@ task_block:
 	nop
 	pop {r7,lr}
 	bx lr
+.global mutex_lock
+mutex_lock:
+	push {r7,lr}
+	mov r7, #0xc
+	svc 0
+	nop
+	pop {r7,lr}
+	bx lr
+.global mutex_unlock
+mutex_unlock:
+	push {r7,lr}
+	mov r7, #0xd
+	svc 0
+	nop
+	pop {r7,lr}
+	bx lr

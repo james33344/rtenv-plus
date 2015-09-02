@@ -38,6 +38,13 @@ extern int main();
 unsigned int tick_count = 0;
 int timeup = 0;
 
+struct mutex_t {
+	unsigned int addr[MUTEX_LIMIT];
+	int count;
+	int ishead;
+} __mutex;
+
+
 void write_blank(int blank_num);
 size_t current_task = 0;
 size_t task_count = 0;
@@ -148,6 +155,16 @@ int task_release(struct event_monitor *monitor, int event,
 	return tasks[*pid].inuse == 0;
 }
 
+int mutex_release(struct event_monitor *monitor, int event,
+                 struct task_control_block *task, void *data)
+{
+	if(__mutex.ishead == 1) {
+		__mutex.ishead = 0;
+		return 1;
+	}
+	return 0;
+}
+
 /*	user app entry	*/
 void kernel_thread() {
 	main();
@@ -206,6 +223,10 @@ int __rtenv_start()
 		event_monitor_register(&event_monitor, TASK_EVENT(i), task_release, &pid);
 	}
 
+    /* Register MUTEX events */
+	for (i = 0; i < MUTEX_LIMIT; i++)
+	    event_monitor_register(&event_monitor, MUTEX_EVENT(i), mutex_release, 0);
+
 	event_monitor_register(&event_monitor, TIME_EVENT, time_release, &tick_count);
     /* Initialize all task threads */
 	task_create(0, pathserver, NULL);
@@ -217,6 +238,9 @@ int __rtenv_start()
 	task_create(PRIORITY_LIMIT, kernel_thread, NULL);
 
 	current_tcb = &tasks[current_task];
+
+	__mutex.count = 0;
+	__mutex.ishead = 1;
 
 	SysTick_Config(configCPU_CLOCK_HZ / configTICK_RATE_HZ);
 
@@ -387,8 +411,55 @@ void syscall_handler(){
 		{
 			event_monitor_block(&event_monitor,
 						        TASK_EVENT(current_tcb->stack->r0),
-								current_tcb);
+										current_tcb);
 			current_tcb->status = TASK_WAIT_TASK;
+		}
+		break;
+	case 0xc: /* mutex_lock */
+		{
+			unsigned int mutex_addr = current_tcb->stack->r0;
+			/* search if mutex exist */
+			for(int i = 0; i < MUTEX_LIMIT; i++) {
+				if(__mutex.addr[i] == mutex_addr) {
+					event_monitor_block(&event_monitor,
+								        MUTEX_EVENT(i),
+												current_tcb);
+					current_tcb->status = TASK_WAIT_MUTEX;
+					current_tcb->stack->r0 = 0;
+					return;	
+				}
+			}
+			int empty_mutex = 0;
+
+			for(; empty_mutex < MUTEX_LIMIT; empty_mutex++) {
+					if(list_empty(&event_monitor.events[MUTEX_EVENT(empty_mutex)].list)) {
+						break;
+					}
+			}
+			event_monitor_block(&event_monitor,
+						        MUTEX_EVENT(empty_mutex),
+										current_tcb);
+			current_tcb->status = TASK_WAIT_MUTEX;
+			__mutex.addr[empty_mutex] = mutex_addr;
+			__mutex.count++;
+			current_tcb->stack->r0 = 0;
+			
+		}
+		break;
+	case 0xd:	/* mutex_unlock */
+		{
+			unsigned int mutex_addr = current_tcb->stack->r0;
+			/* search if mutex exist */
+			for(int i = 0; i < MUTEX_LIMIT; i++) {
+				if(__mutex.addr[i] == mutex_addr) {
+					event_monitor_release(&event_monitor, MUTEX_EVENT(i));
+					current_tcb->stack->r0 = 0;
+					__mutex.count--;
+					return;
+				}
+			}		
+			current_tcb->stack->r0 = -1;
+
 		}
 		break;
 	default:
@@ -426,6 +497,7 @@ void context_switch(){
     task = list_entry(list, struct task_control_block, list);
     current_task = task->pid;
     current_tcb = &tasks[current_task];
+		__mutex.ishead = 1;
 
 }
 

@@ -3,6 +3,10 @@
 
 #include "task.h"
 
+/* TODO
+ * Copy from Linux pthread library.
+ * Should verify whether it's in use or not
+ */
 #define SIZEOF_PTHREAD_ATTR_T 36
 #define SIZEOF_PTHREAD_MUTEX_T 24
 #define SIZEOF_PTHREAD_MUTEXATTR_T 4
@@ -14,10 +18,7 @@
 #define SIZEOF_PTHREAD_BARRIER_T 20
 #define SIZEOF_PTHREAD_BARRIERATTR_T 4
 
-
-
 //typedef unsigned long int pthread_t;
-
 
 struct sched_param {
 	int policy;
@@ -40,27 +41,25 @@ struct pthread_struct {
 };
 
 typedef struct pthread_struct* pthread_t;
-//------------------------check to here--------------------
 
 typedef struct pthread_internal_slist {
   struct pthread_internal_slist *next;
 } pthread_slist_t;
 
+
+/******* FROM LINUX PTHREAD LIBRARY	********/
 /* Data structures for mutex handling.  The structure of the attribute
    type is not exposed on purpose.  */
 typedef union {
 	struct pthread_mutex_s {
 		int lock;
 		unsigned int count;
-		int owner;
+		int state;
 		/* KIND must stay at this position in the structure to maintain
 		binary compatibility.  */
 		int kind;
 		unsigned int nusers;
-		union {
-			int spins;
-			pthread_slist_t list;
-		};
+		int spins;
   } data;
 		char size[SIZEOF_PTHREAD_MUTEX_T];
 		long int align;
@@ -74,6 +73,7 @@ typedef union {
   long int align;
 } pthread_mutexattr_t;
 
+//------------------------check to here--------------------
 
 /* Data structure for conditional variable handling.  The structure of
    the attribute type is not exposed on purpose.  */

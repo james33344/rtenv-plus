@@ -10,6 +10,7 @@
 #define INTR_EVENT_REVERSE(event) ((event) - FILE_LIMIT - 15)
 #define TIME_EVENT (FILE_LIMIT + INTR_LIMIT)
 #define TASK_EVENT(pid) (TIME_EVENT + pid)
+#define MUTEX_EVENT(count) (TASK_EVENT(TASK_LIMIT) + count)
 #define _disable_irq() __asm__ __volatile__ ( "cpsid i" );
 #define _enable_irq() __asm__ __volatile__ ( "cpsie i" );
 

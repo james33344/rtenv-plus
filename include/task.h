@@ -10,6 +10,7 @@
 #define TASK_WAIT_INTR  3
 #define TASK_WAIT_TIME  4
 #define TASK_WAIT_TASK  5
+#define TASK_WAIT_MUTEX  6
 
 /* Stack struct of user thread, see "Exception entry and return" */
 struct user_thread_stack {
