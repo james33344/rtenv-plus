@@ -46,13 +46,13 @@ INCDIR = include \
 INCLUDES = $(addprefix -I,$(INCDIR))
 
 SRCDIR_429 = src_429 \
-         $(CMSIS_429_LIB)/ST/STM32F4xx/Source/Templates \
+         $(CMSIS_429_LIB)/Device/ST/STM32F4xx/Source/Templates \
          $(STM32_429_LIB)/src \
 		 $(APP_DIR)
 INCDIR_429 = include \
-         $(CMSIS_429_LIB)/ST/STM32F4xx/Include \
-         $(CMSIS_429_LIB)/Include \
+         $(CMSIS_429_LIB)/Device/ST/STM32F4xx/Include \
          $(STM32_429_LIB)/inc \
+         $(CMSIS_429_LIB)/Include \
 		 $(APP_DIR)
 		 
 INCLUDES_429 = $(addprefix -I,$(INCDIR_429))
@@ -67,7 +67,7 @@ DEP = $(OBJ:.o=.o.d)
 
 SRC_429 = $(wildcard $(addsuffix /*.c,$(SRCDIR_429))) \
       $(wildcard $(addsuffix /*.s,$(SRCDIR_429))) \
-      $(CMSIS_429_LIB)/ST/STM32F4xx/Source/Templates/gcc_ride7/startup_stm32f4xx.s
+      $(CMSIS_429_LIB)/Device/ST/STM32F4xx/Source/Templates/gcc_ride7/startup_stm32f429_439xx.s
 OBJ_429 := $(addprefix $(OUTDIR_429)/,$(patsubst %.s,%.o,$(SRC_429:.c=.o)))
 DEP_429 = $(OBJ_429:.o=.o.d)
 DAT =
