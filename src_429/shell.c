@@ -730,6 +730,11 @@ void show_ls(int argc, char *argv[]) {
 
 	int root_len = entry.len - sizeof(entry);
 	while(root_len > 0) {
+		sleep(1);
+		/* FIXME
+		 * Memmory access error (0x6XXXXXX)
+		 * So ls not work
+		 */
 		read(fd, &entry, sizeof(entry));
 		if(entry.isdir) {
 			write(fdout, "/", 2);
@@ -757,6 +762,11 @@ void show_cat(int argc, char *argv[]) {
 	
 	int root_len = entry.len - sizeof(entry);
 	while(root_len > 0) {
+
+		/* FIXME
+		 * Memmory access error (0x6XXXXXX)
+		 * So cat not work
+		 */
 		read(fd, &entry, sizeof(entry));
 
 		/* find file name */
