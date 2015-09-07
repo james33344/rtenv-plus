@@ -40,6 +40,7 @@ void show_history(int argc, char *argv[]);
 void show_xxd(int argc, char *argv[]);
 void show_pwd(int argc, char *argv[]);
 void show_ls(int argc, char *argv[]);
+void show_cat(int argc, char *argv[]);
 void show_keyup();
 
 
@@ -54,6 +55,7 @@ enum {
 	CMD_XXD,
 	CMD_PWD,
 	CMD_LS,
+	CMD_CAT,
 	CMD_COUNT
 } CMD_TYPE;
 /* Structure for command handler. */
@@ -72,6 +74,7 @@ const hcmd_entry cmd_data[CMD_COUNT] = {
 	[CMD_XXD] = {.cmd = "xxd", .func = show_xxd, .description = "Make a hexdump."},
 	[CMD_PWD] = {.cmd = "pwd", .func = show_pwd, .description = "Show current mount point."},
 	[CMD_LS] = {.cmd = "ls", .func = show_ls, .description = "Show files."},
+	[CMD_CAT] = {.cmd = "cat", .func = show_cat, .description = "Show files content."},
 };
 
 /* Structure for environment variables. */
@@ -82,6 +85,14 @@ typedef struct {
 evar_entry env_var[MAX_ENVCOUNT];
 int env_count = 0;
 
+struct romfs_entry {
+	  uint32_t parent;
+		uint32_t prev;
+		uint32_t next;
+		uint32_t isdir;
+		uint32_t len;
+		uint8_t name[PATH_MAX];
+};
 
 void serialout(void* arg)
 {
@@ -705,14 +716,6 @@ void show_pwd(int argc, char *argv[]) {
 
 void show_ls(int argc, char *argv[]) {
 	int fd = open("/dev/rom0", 0);
-	struct romfs_entry {
-		  uint32_t parent;
-			uint32_t prev;
-			uint32_t next;
-			uint32_t isdir;
-			uint32_t len;
-			uint8_t name[PATH_MAX];
-	};
 	struct romfs_entry entry;
 	/* root */
 	read(fd, &entry, sizeof(entry));
@@ -734,6 +737,55 @@ void show_ls(int argc, char *argv[]) {
 		lseek(fd, entry.len, SEEK_CUR);
 	}
 
+	write(fdout, next_line, 3);
+	lseek(fd, 0, SEEK_SET);
+}
+
+void show_cat(int argc, char *argv[]) {
+	int fd = open("/dev/rom0", 0);
+	struct romfs_entry entry;
+	/* root */
+	read(fd, &entry, sizeof(entry));
+	
+	int root_len = entry.len - sizeof(entry);
+	while(root_len > 0) {
+		read(fd, &entry, sizeof(entry));
+
+		/* find file name */
+		if(strcmp((char*)entry.name, argv[1]) == 0) {
+			if(entry.isdir) {
+					write(fdout, "It's a directory.", 18);
+					write(fdout, next_line, 3);
+					lseek(fd, 0, SEEK_SET);
+					return;		
+			}
+
+			/* Print content.
+			 * Single block r/w needs less than BLOCK_BUF
+			 * see block.c
+			 */
+			while(entry.len) {
+				char buf[BLOCK_BUF + 1];
+				if(entry.len > BLOCK_BUF) {
+					read(fd, buf, BLOCK_BUF);
+					puts(buf);
+					entry.len -= BLOCK_BUF;
+				}
+				else {
+					read(fd, buf, entry.len);
+					puts(buf);
+					entry.len = 0;
+					lseek(fd, 0, SEEK_SET);
+					write(fdout, next_line, 3);
+					return;		
+				}
+			}
+			write(fdout, next_line, 3);
+		}
+		root_len -= (entry.len + sizeof(entry));
+		lseek(fd, entry.len, SEEK_CUR);
+	}
+	write(fdout, "No file found.", 15);
 	write(fdout, next_line, 3);
 	lseek(fd, 0, SEEK_SET);
 }
