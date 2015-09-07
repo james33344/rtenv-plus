@@ -1,4 +1,5 @@
 #include "rtenv.h"
+#include "romdev.h"
 
 #define MAX_CMDNAME 19
 #define MAX_ARGC 19
@@ -37,6 +38,8 @@ void show_task_info(int argc, char *argv[]);
 void show_man_page(int argc, char *argv[]);
 void show_history(int argc, char *argv[]);
 void show_xxd(int argc, char *argv[]);
+void show_pwd(int argc, char *argv[]);
+void show_ls(int argc, char *argv[]);
 void show_keyup();
 
 
@@ -49,6 +52,8 @@ enum {
 	CMD_MAN,
 	CMD_PS,
 	CMD_XXD,
+	CMD_PWD,
+	CMD_LS,
 	CMD_COUNT
 } CMD_TYPE;
 /* Structure for command handler. */
@@ -65,6 +70,8 @@ const hcmd_entry cmd_data[CMD_COUNT] = {
 	[CMD_MAN] = {.cmd = "man", .func = show_man_page, .description = "Manual pager."},
 	[CMD_PS] = {.cmd = "ps", .func = show_task_info, .description = "List all the processes."},
 	[CMD_XXD] = {.cmd = "xxd", .func = show_xxd, .description = "Make a hexdump."},
+	[CMD_PWD] = {.cmd = "pwd", .func = show_pwd, .description = "Show current mount point."},
+	[CMD_LS] = {.cmd = "ls", .func = show_ls, .description = "Show files."},
 };
 
 /* Structure for environment variables. */
@@ -690,6 +697,46 @@ void show_keyup(){
 	}
 }
 
+void show_pwd(int argc, char *argv[]) {
+	char buf[] = ROMDEV_PATH;
+	write(fdout, buf, sizeof(buf));
+	write(fdout, next_line, 3);
+}
+
+void show_ls(int argc, char *argv[]) {
+	int fd = open("/dev/rom0", 0);
+	struct romfs_entry {
+		  uint32_t parent;
+			uint32_t prev;
+			uint32_t next;
+			uint32_t isdir;
+			uint32_t len;
+			uint8_t name[PATH_MAX];
+	};
+	struct romfs_entry entry;
+	/* root */
+	read(fd, &entry, sizeof(entry));
+
+	int root_len = entry.len - sizeof(entry);
+	while(root_len > 0) {
+		read(fd, &entry, sizeof(entry));
+		if(entry.isdir) {
+			write(fdout, "/", 2);
+			write(fdout, entry.name, PATH_MAX);
+			write(fdout, " ", 2);
+		}
+		else {
+			write(fdout, entry.name, PATH_MAX);
+			write(fdout, " ", 2);
+		}
+		root_len -= (entry.len + sizeof(entry));
+		/* we don't need content */
+		lseek(fd, entry.len, SEEK_CUR);
+	}
+
+	write(fdout, next_line, 3);
+	lseek(fd, 0, SEEK_SET);
+}
 
 void itoa(int n, char *dst, int base)
 {
