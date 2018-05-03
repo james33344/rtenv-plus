@@ -23,8 +23,8 @@ struct romfs_entry {
     uint8_t name[PATH_MAX];
 };
 
-int romfs_open_recur(int device, char *path, int this, struct romfs_entry *entry)
-{
+int romfs_open_recur(int device, char *path, int this,
+                     struct romfs_entry *entry) {
     if (entry->isdir) {
         /* Iterate through children */
         int pos = this + sizeof(*entry);
@@ -34,8 +34,8 @@ int romfs_open_recur(int device, char *path, int this, struct romfs_entry *entry
             read(device, entry, sizeof(*entry));
 
             /* Compare path */
-            int len = strlen((char *)entry->name);
-            if (strncmp((char *)entry->name, path, len) == 0) {
+            int len = strlen((char *) entry->name);
+            if (strncmp((char *) entry->name, path, len) == 0) {
                 if (path[len] == '/') { /* Match directory */
                     return romfs_open_recur(device, path + len + 1, pos, entry);
                 }
@@ -55,8 +55,7 @@ int romfs_open_recur(int device, char *path, int this, struct romfs_entry *entry
 /*
  * return entry position
  */
-int romfs_open(int device, char *path, struct romfs_entry *entry)
-{
+int romfs_open(int device, char *path, struct romfs_entry *entry) {
     /* Get root entry */
     lseek(device, 0, SEEK_SET);
     read(device, entry, sizeof(*entry));
@@ -64,8 +63,7 @@ int romfs_open(int device, char *path, struct romfs_entry *entry)
     return romfs_open_recur(device, path, 0, entry);
 }
 
-void romfs_server()
-{
+void romfs_server() {
     struct romfs_file files[ROMFS_FILE_LIMIT];
     int nfiles = 0;
     int self = getpid() + 3;
@@ -88,38 +86,39 @@ void romfs_server()
     while (1) {
         if (read(self, &request, sizeof(request)) == sizeof(request)) {
             cmd = request.cmd;
-	        switch (cmd) {
-	            case FS_CMD_OPEN:
-	                device = request.device;
-	                from = request.from;
-	                pos = request.pos; /* searching starting position */
-	                pos = romfs_open(request.device, request.path + pos, &entry);
+            switch (cmd) {
+                case FS_CMD_OPEN:
+                    device = request.device;
+                    from = request.from;
+                    pos = request.pos; /* searching starting position */
+                    pos =
+                        romfs_open(request.device, request.path + pos, &entry);
 
-	                if (pos >= 0) { /* Found */
-	                    /* Register */
-	                    status = path_register(request.path);
+                    if (pos >= 0) { /* Found */
+                        /* Register */
+                        status = path_register(request.path);
 
                         if (status != -1) {
                             mknod(status, 0, S_IFREG);
-	                        files[nfiles].fd = status;
-	                        files[nfiles].device = request.device;
-	                        files[nfiles].start = pos + sizeof(entry);
-	                        files[nfiles].len = entry.len;
-	                        nfiles++;
-	                    }
-	                }
-	                else {
-	                    status = -1;
-	                }
+                            files[nfiles].fd = status;
+                            files[nfiles].device = request.device;
+                            files[nfiles].start = pos + sizeof(entry);
+                            files[nfiles].len = entry.len;
+                            nfiles++;
+                        }
+                    }
+                    else {
+                        status = -1;
+                    }
 
                     /* Response */
-	                write(from, &status, sizeof(status));
-	                break;
-	            case FS_CMD_READ:
-	                from = request.from;
-	                target = request.target;
-	                size = request.size;
-	                pos = request.pos;
+                    write(from, &status, sizeof(status));
+                    break;
+                case FS_CMD_READ:
+                    from = request.from;
+                    target = request.target;
+                    size = request.size;
+                    pos = request.pos;
 
                     /* Find fd */
                     for (i = 0; i < nfiles; i++) {
@@ -130,8 +129,8 @@ void romfs_server()
                             data_start = files[i].start + pos;
                             if (data_start < files[i].start) {
                                 i = nfiles;
-	                            break;
-	                        }
+                                break;
+                            }
                             if (data_start > files[i].start + files[i].len)
                                 data_start = files[i].start + files[i].len;
 
@@ -152,13 +151,13 @@ void romfs_server()
                     size = read(device, data, size);
 
                     /* Response */
-	                write(target, data, size);
-	                break;
+                    write(target, data, size);
+                    break;
 
-	            case FS_CMD_SEEK:
-	                target = request.target;
-	                size = request.size;
-	                pos = request.pos;
+                case FS_CMD_SEEK:
+                    target = request.target;
+                    size = request.size;
+                    pos = request.pos;
 
                     /* Find fd */
                     for (i = 0; i < nfiles; i++) {
@@ -171,21 +170,21 @@ void romfs_server()
                         break;
                     }
 
-	                if (pos == 0) { /* SEEK_SET */
-	                }
-	                else if (pos < 0) { /* SEEK_END */
-	                    size = (files[i].len) + size;
-	                }
-	                else { /* SEEK_CUR */
-	                    size = pos + size;
-	                }
-	                lseek(target, size, SEEK_SET);
-	                break;
+                    if (pos == 0) { /* SEEK_SET */
+                    }
+                    else if (pos < 0) { /* SEEK_END */
+                        size = (files[i].len) + size;
+                    }
+                    else { /* SEEK_CUR */
+                        size = pos + size;
+                    }
+                    lseek(target, size, SEEK_SET);
+                    break;
 
-	            case FS_CMD_WRITE: /* readonly */
-	            default:
-	                write(target, NULL, -1);
-	        }
+                case FS_CMD_WRITE: /* readonly */
+                default:
+                    write(target, NULL, -1);
+            }
         }
     }
 }

@@ -1,28 +1,22 @@
 #include "list.h"
 
-void list_init(struct list* list)
-{
+void list_init(struct list *list) {
     if (list) {
         list->prev = list;
         list->next = list;
     }
 }
 
-int list_empty(struct list *list)
-{
-    return list->next == list;
-}
+int list_empty(struct list *list) { return list->next == list; }
 
-void list_remove(struct list *list)
-{
+void list_remove(struct list *list) {
     if (list) {
         list->next->prev = list->prev;
         list->prev->next = list->next;
     }
 }
 
-void list_unshift(struct list *list, struct list *new)
-{
+void list_unshift(struct list *list, struct list *new) {
     if (list && new) {
         list_remove(new);
 
@@ -33,8 +27,7 @@ void list_unshift(struct list *list, struct list *new)
     }
 }
 
-void list_push(struct list *list, struct list *new)
-{
+void list_push(struct list *list, struct list *new) {
     if (list && new) {
         /* Remove new from origin list */
         new->prev->next = new->next;
@@ -47,8 +40,7 @@ void list_push(struct list *list, struct list *new)
     }
 }
 
-struct list* list_shift(struct list *list)
-{
+struct list *list_shift(struct list *list) {
     struct list *first = list->next;
 
     if (first == list)

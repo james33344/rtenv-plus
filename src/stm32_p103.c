@@ -7,8 +7,7 @@
 #include "stm32f10x_exti.h"
 #include "misc.h"
 
-void init_led(void)
-{
+void init_led(void) {
     GPIO_InitTypeDef GPIO_InitStructure;
 
     /* Enable GPIO C clock. */
@@ -18,31 +17,29 @@ void init_led(void)
      * between power and the microcontroller pin, which makes it turn on when
      * the pin is low.
      */
-    GPIO_WriteBit(GPIOC,GPIO_Pin_12,Bit_SET);
+    GPIO_WriteBit(GPIOC, GPIO_Pin_12, Bit_SET);
 
     /* Configure the LED pin as push-pull output. */
-    GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_12;
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(GPIOC, &GPIO_InitStructure);
 }
 
-void init_button(void)
-{
+void init_button(void) {
     GPIO_InitTypeDef GPIO_InitStructure;
 
     /* Enable GPIO A clock */
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
 
     /* Configure the button pin as a floating input. */
-    GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_0;
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(GPIOC, &GPIO_InitStructure);
 }
 
-void enable_button_interrupts(void)
-{
+void enable_button_interrupts(void) {
     EXTI_InitTypeDef EXTI_InitStructure;
     NVIC_InitTypeDef NVIC_InitStructure;
 
@@ -71,8 +68,7 @@ void enable_button_interrupts(void)
     NVIC_Init(&NVIC_InitStructure);
 }
 
-void init_rs232(void)
-{
+void init_rs232(void) {
     USART_InitTypeDef USART_InitStructure;
     GPIO_InitTypeDef GPIO_InitStructure;
 
@@ -96,14 +92,14 @@ void init_rs232(void)
     USART_InitStructure.USART_WordLength = USART_WordLength_8b;
     USART_InitStructure.USART_StopBits = USART_StopBits_1;
     USART_InitStructure.USART_Parity = USART_Parity_No;
-    USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+    USART_InitStructure.USART_HardwareFlowControl =
+        USART_HardwareFlowControl_None;
     USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
     USART_Init(USART2, &USART_InitStructure);
     USART_Cmd(USART2, ENABLE);
 }
 
-void enable_rs232_interrupts(void)
-{
+void enable_rs232_interrupts(void) {
     NVIC_InitTypeDef NVIC_InitStructure;
 
     /* Enable transmit and receive interrupts for the USART2. */
@@ -118,8 +114,7 @@ void enable_rs232_interrupts(void)
     NVIC_Init(&NVIC_InitStructure);
 }
 
-void enable_rs232(void)
-{
+void enable_rs232(void) {
     /* Enable the RS232 port. */
     USART_Cmd(USART2, ENABLE);
 }
@@ -131,8 +126,7 @@ void enable_rs232(void)
 #include "stm32f4xx_rcc.h"
 
 
-void init_rs232(void)
-{
+void init_rs232(void) {
     USART_InitTypeDef USART_InitStructure;
     GPIO_InitTypeDef GPIO_InitStructure;
 
@@ -141,7 +135,7 @@ void init_rs232(void)
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
 
     GPIO_PinAFConfig(GPIOA, GPIO_PinSource9, GPIO_AF_USART1);   // USART2_TX
-    GPIO_PinAFConfig(GPIOA, GPIO_PinSource10, GPIO_AF_USART1);   // USART2_RX
+    GPIO_PinAFConfig(GPIOA, GPIO_PinSource10, GPIO_AF_USART1);  // USART2_RX
     /* Configure USART2 Rx pin as floating input. */
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9 | GPIO_Pin_10;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
@@ -156,7 +150,8 @@ void init_rs232(void)
     USART_InitStructure.USART_WordLength = USART_WordLength_8b;
     USART_InitStructure.USART_StopBits = USART_StopBits_1;
     USART_InitStructure.USART_Parity = USART_Parity_No;
-    USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+    USART_InitStructure.USART_HardwareFlowControl =
+        USART_HardwareFlowControl_None;
     USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
     USART_Init(USART1, &USART_InitStructure);
     USART_Cmd(USART1, ENABLE);
