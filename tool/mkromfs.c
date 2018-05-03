@@ -27,14 +27,13 @@ struct entry {
     uint8_t name[PATH_LEN + 1];
 };
 
-size_t fwrite_off(const void *ptr, size_t size, size_t nmemb, FILE *stream, off_t off)
-{
+size_t fwrite_off(const void *ptr, size_t size, size_t nmemb, FILE *stream,
+                  off_t off) {
     fseek(stream, off, SEEK_SET);
     return fwrite(ptr, size, nmemb, stream);
 }
 
-int procfile(const char *filename, char *fullpath, FILE *outfile)
-{
+int procfile(const char *filename, char *fullpath, FILE *outfile) {
     FILE *infile;
     char buf[BUF_SIZE];
     size_t size;
@@ -53,8 +52,7 @@ int procfile(const char *filename, char *fullpath, FILE *outfile)
     return ftell(outfile);
 }
 
-int procdir(const char *dirname, char *fullpath, FILE *outfile)
-{
+int procdir(const char *dirname, char *fullpath, FILE *outfile) {
     DIR *dirfile;
     struct dirent *direntry;
 
@@ -85,7 +83,7 @@ int procdir(const char *dirname, char *fullpath, FILE *outfile)
         this_entry = next_entry;
 
         entry.prev = prev_entry;
-        strncpy((void*)entry.name, direntry->d_name, PATH_LEN);
+        strncpy((void *) entry.name, direntry->d_name, PATH_LEN);
 
         strcpy(fullpath + fullpath_len, direntry->d_name);
 
@@ -123,8 +121,7 @@ int procdir(const char *dirname, char *fullpath, FILE *outfile)
     return next_entry;
 }
 
-int main (int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     int c;
     FILE *outfile;
     const char *outname = NULL;
@@ -147,8 +144,7 @@ int main (int argc, char *argv[])
                     error(ERR(NO_OUT), EINVAL,
                           "-o option need a output file name.\n");
                 break;
-            default:
-                ;
+            default:;
         }
     }
 
@@ -162,8 +158,7 @@ int main (int argc, char *argv[])
         outfile = stdout;
 
     if (!outfile) {
-        error(ERR(OPEN_OUT), errno,
-              "Cannot open output file '%s'\n", outname);
+        error(ERR(OPEN_OUT), errno, "Cannot open output file '%s'\n", outname);
     }
 
     strcpy(fullpath, dirname);

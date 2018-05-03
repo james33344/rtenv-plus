@@ -13,7 +13,7 @@ CFLAGS = -fno-common -ffreestanding -O0 \
          -mcpu=cortex-m3 -mthumb \
          -Wl,-Tmain.ld -nostartfiles \
          -DUSER_NAME=\"$(USER)\"	\
-		 -std=c11
+         -std=c11
 
 CFLAGS_429 = $(CFLAGS) -DSTM32F4
 
@@ -22,11 +22,11 @@ VENDOR = ST
 PLAT = STM32F10x
 
 LIBDIR = .
-CMSIS_LIB=$(LIBDIR)/libraries/CMSIS/$(ARCH)
-STM32_LIB=$(LIBDIR)/libraries/STM32F10x_StdPeriph_Driver
+CMSIS_LIB = $(LIBDIR)/libraries/CMSIS/$(ARCH)
+STM32_LIB = $(LIBDIR)/libraries/STM32F10x_StdPeriph_Driver
 
-CMSIS_429_LIB=$(LIBDIR)/libraries/CMSIS_429
-STM32_429_LIB=$(LIBDIR)/libraries/STM32F4xx_StdPeriph_Driver
+CMSIS_429_LIB = $(LIBDIR)/libraries/CMSIS_429
+STM32_429_LIB = $(LIBDIR)/libraries/STM32F4xx_StdPeriph_Driver
 
 CMSIS_PLAT_SRC = $(CMSIS_LIB)/DeviceSupport/$(VENDOR)/$(PLAT)
 
@@ -37,23 +37,23 @@ SRCDIR = src \
          $(CMSIS_LIB)/CoreSupport \
          $(STM32_LIB)/src \
          $(CMSIS_PLAT_SRC) \
-		 $(APP_DIR)
+         $(APP_DIR)
 INCDIR = include \
          $(CMSIS_LIB)/CoreSupport \
          $(STM32_LIB)/inc \
          $(CMSIS_PLAT_SRC) \
-		 $(APP_DIR)
+         $(APP_DIR)
 INCLUDES = $(addprefix -I,$(INCDIR))
 
 SRCDIR_429 = src_429 \
          $(CMSIS_429_LIB)/Device/ST/STM32F4xx/Source/Templates \
          $(STM32_429_LIB)/src \
-		 $(APP_DIR)
+         $(APP_DIR)
 INCDIR_429 = include \
          $(CMSIS_429_LIB)/Device/ST/STM32F4xx/Include \
          $(STM32_429_LIB)/inc \
          $(CMSIS_429_LIB)/Include \
-		 $(APP_DIR)
+         $(APP_DIR)
 		 
 INCLUDES_429 = $(addprefix -I,$(INCDIR_429))
 DATDIR = data
