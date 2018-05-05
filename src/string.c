@@ -1,12 +1,5 @@
 #include "string.h"
-
-#ifndef STM32F4
-#include "stm32f10x.h"
-#else
-#include "stm32f4xx.h"
-#endif
-
-
+#include "platform.h"
 
 int strcmp(const char *a, const char *b) {
     __asm(

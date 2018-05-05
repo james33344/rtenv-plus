@@ -1,12 +1,7 @@
 #include "kconfig.h"
 #include "kernel.h"
-#ifndef STM32F4
-#include "stm32f10x.h"
+#include "platform.h"
 #include "stm32_p103.h"
-#else
-#include "stm32f4xx.h"
-#include "stm32_p103.h"
-#endif
 #include "RTOSConfig.h"
 #include "syscall.h"
 #include <stddef.h>
@@ -441,6 +436,11 @@ void syscall_handler() {
 void c_usart2_handler() {
     NVIC_DisableIRQ(USART2_IRQn);
     event_monitor_release(&event_monitor, INTR_EVENT(USART2_IRQn));
+}
+
+void c_usart1_handler() {
+    NVIC_DisableIRQ(USART1_IRQn);
+    event_monitor_release(&event_monitor, INTR_EVENT(USART1_IRQn));
 }
 
 void c_systick_handler() {

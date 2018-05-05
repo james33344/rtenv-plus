@@ -11,6 +11,16 @@ USART2_IRQHandler:
     pop {lr}
     bx lr
 
+.type USART1_IRQHandler, %function
+.global USART1_IRQHandler
+USART1_IRQHandler:
+    push {lr}
+    bl c_usart1_handler
+    bl set_pendsv
+    nop
+    pop {lr}
+    bx lr
+
 .type SysTick_Handler, %function
 .global SysTick_Handler
 SysTick_Handler:
