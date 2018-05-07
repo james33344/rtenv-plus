@@ -51,6 +51,49 @@ struct sigaction sig[SIGNUM];
 void signal_default(int arg) { /*	do nothing	*/
 }
 
+void serialout(void) {
+    int fd;
+    char c;
+    int doread = 1;
+    mkfifo("/dev/tty0/out", 0);
+    fd = open("/dev/tty0/out", 0);
+
+    while (1) {
+        if (doread)
+            read(fd, &c, 1);
+        doread = 0;
+        //		if (USART_GetFlagStatus(uart, USART_FLAG_TXE) == SET) {
+        if (USART_GetFlagStatus((USART_TypeDef *) USART2, USART_FLAG_TXE) ==
+            SET) {
+            //			USART_SendData(uart, c);
+            USART_SendData((USART_TypeDef *) USART2, c);
+            doread = 1;
+        }
+    }
+}
+
+void serialin(void) {
+    int fd;
+    char c;
+    mkfifo("/dev/tty0/in", 0);
+    fd = open("/dev/tty0/in", 0);
+
+    USART_ITConfig(USART2, USART_IT_RXNE, ENABLE);
+
+    while (1) {
+        //		interrupt_wait(intr);
+        interrupt_wait(USART2_IRQn);
+
+        /*		if (USART_GetFlagStatus(uart, USART_FLAG_RXNE) == SET) {
+                    c = USART_ReceiveData(uart);
+        */
+        if (USART_GetFlagStatus((USART_TypeDef *) USART2, USART_FLAG_RXNE) ==
+            SET) {
+            c = USART_ReceiveData((USART_TypeDef *) USART2);
+            write(fd, &c, 1);
+        }
+    }
+}
 
 /* TODO
  * Error detect
@@ -216,6 +259,8 @@ int __rtenv_start() {
     task_create(0, romdev_driver, NULL);
     task_create(0, romfs_server, NULL);
     task_create(0, mount_task, NULL);
+    task_create(0, serialout, NULL);
+    task_create(0, serialin, NULL);
 
     task_create(PRIORITY_LIMIT, kernel_thread, NULL);
 
