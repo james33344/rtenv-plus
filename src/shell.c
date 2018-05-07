@@ -1,5 +1,8 @@
 #include "rtenv.h"
 #include "romdev.h"
+#if defined(RTENV_SHELL_PTHREAD)
+#include "task.h"
+#endif
 
 #define MAX_CMDNAME 19
 #define MAX_ARGC 19
@@ -759,6 +762,7 @@ void itoa(int n, char *dst, int base) {
 }
 
 int __attribute__((weak)) main() {
+#if defined(RTENV_SHELL_PTHREAD)
     pthread_t rs232_xmit_msg_task_t,
         serial_test_task_t;
     pthread_attr_t c, d;
@@ -771,5 +775,9 @@ int __attribute__((weak)) main() {
     pthread_create(&rs232_xmit_msg_task_t, &c, (void *) rs232_xmit_msg_task,
                    NULL);
     pthread_create(&serial_test_task_t, &d, (void *) serial_test_task, NULL);
+#else
+    task_create(18, rs232_xmit_msg_task, NULL);
+    task_create(10, serial_test_task, NULL);
+#endif
     return 0;
 }
