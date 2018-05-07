@@ -1,13 +1,12 @@
-QEMU_STM32 ?= ../qemu_stm32/arm-softmmu/qemu-system-arm
+QEMU_STM32 ?= ../qemu_stm32-stm32_v0.1.3/arm-softmmu/qemu-system-arm
 
 qemu: $(OUTDIR)/$(TARGET).bin $(QEMU_STM32)
-	$(QEMU_STM32) -M stm32-p103 \
-		-monitor stdio \
+	$(QEMU_STM32) -M stm32-p103 -nographic\
+		-cpu cortex-m3 \
 		-kernel $(OUTDIR)/$(TARGET).bin -semihosting
 
 qemud: $(OUTDIR)/$(TARGET).bin $(QEMU_STM32)
 	$(QEMU_STM32) -M stm32-p103 \
-		-monitor stdio \
 		-gdb tcp::3333 -S \
 		-kernel $(OUTDIR)/$(TARGET).bin -semihosting
 
